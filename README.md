@@ -1,0 +1,1 @@
+An AI-powered shopping assistant that searches,compares and evaluates products based on features,prices,and user requirements.
