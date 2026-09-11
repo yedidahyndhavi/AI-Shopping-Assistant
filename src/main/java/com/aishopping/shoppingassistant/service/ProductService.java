@@ -22,4 +22,7 @@ public class ProductService {
     public Product addProduct(Product product) {
         return productRepository.save(product);
     }
+    public List<Product> searchProducts(String name) {
+    return productRepository.findByNameContainingIgnoreCase(name);
+}
 }
