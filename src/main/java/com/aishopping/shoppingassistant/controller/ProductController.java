@@ -1,6 +1,7 @@
 package com.aishopping.shoppingassistant.controller;
 
 import com.aishopping.shoppingassistant.model.Product;
+import com.aishopping.shoppingassistant.model.ProductComparison;
 import com.aishopping.shoppingassistant.service.ProductService;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,7 +28,7 @@ public class ProductController {
     }
 
     @GetMapping("/compare")
-    public List<Product> compareProducts(@RequestParam List<Long> ids) {
+    public ProductComparison compareProducts(@RequestParam List<Long> ids) {
         return productService.compareProducts(ids);
     }
 
