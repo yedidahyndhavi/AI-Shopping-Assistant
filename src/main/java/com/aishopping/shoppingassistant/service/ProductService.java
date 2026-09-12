@@ -25,4 +25,7 @@ public class ProductService {
     public List<Product> searchProducts(String name) {
     return productRepository.findByNameContainingIgnoreCase(name);
 }
+public List<Product> compareProducts(List<Long> ids) {
+    return productRepository.findAllById(ids);
+}
 }

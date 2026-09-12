@@ -19,10 +19,17 @@ public class ProductController {
     @GetMapping
     public List<Product> getAllProducts() {
         return productService.getAllProducts();
-    }@GetMapping("/search")
-public List<Product> searchProducts(@RequestParam String name) {
-    return productService.searchProducts(name);
-}
+    }
+
+    @GetMapping("/search")
+    public List<Product> searchProducts(@RequestParam String name) {
+        return productService.searchProducts(name);
+    }
+
+    @GetMapping("/compare")
+    public List<Product> compareProducts(@RequestParam List<Long> ids) {
+        return productService.compareProducts(ids);
+    }
 
     @PostMapping
     public Product addProduct(@RequestBody Product product) {
