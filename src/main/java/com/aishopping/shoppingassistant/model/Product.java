@@ -16,16 +16,22 @@ public class Product {
     private String name;
     private String brand;
     private double price;
+    private String category;
+    private double rating;
+    private String description;
 
     public Product() {
     }
 
-    public Product(String name, String brand, double price) {
-        this.name = name;
-        this.brand = brand;
-        this.price = price;
-    }
-
+    public Product(String name, String brand, double price,
+               String category, double rating, String description) {
+    this.name = name;
+    this.brand = brand;
+    this.price = price;
+    this.category = category;
+    this.rating = rating;
+    this.description = description;
+}
     public Long getId() {
         return id;
     }
@@ -53,4 +59,27 @@ public class Product {
     public void setPrice(double price) {
         this.price = price;
     }
+    public String getCategory() {
+    return category;
+}
+
+public void setCategory(String category) {
+    this.category = category;
+}
+
+public double getRating() {
+    return rating;
+}
+
+public void setRating(double rating) {
+    this.rating = rating;
+}
+
+public String getDescription() {
+    return description;
+}
+
+public void setDescription(String description) {
+    this.description = description;
+}
 }

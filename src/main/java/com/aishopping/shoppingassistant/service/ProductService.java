@@ -24,6 +24,21 @@ public class ProductService {
         return productRepository.save(product);
     }
 
+    public Product updateProduct(Long id, Product updatedProduct) {
+
+    Product existingProduct = productRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Product not found"));
+
+    existingProduct.setName(updatedProduct.getName());
+    existingProduct.setBrand(updatedProduct.getBrand());
+    existingProduct.setPrice(updatedProduct.getPrice());
+    existingProduct.setCategory(updatedProduct.getCategory());
+    existingProduct.setRating(updatedProduct.getRating());
+    existingProduct.setDescription(updatedProduct.getDescription());
+
+    return productRepository.save(existingProduct);
+}
+
     public List<Product> searchProducts(String name) {
         return productRepository.findByNameContainingIgnoreCase(name);
     }
