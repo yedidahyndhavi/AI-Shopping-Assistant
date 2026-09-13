@@ -26,6 +26,20 @@ public class ProductController {
     public List<Product> searchProducts(@RequestParam String name) {
         return productService.searchProducts(name);
     }
+    @GetMapping("/filter/category")
+    public List<Product> filterByCategory(@RequestParam String category) {
+    return productService.filterByCategory(category);
+}
+
+    @GetMapping("/filter/price")
+    public List<Product> filterByMaxPrice(@RequestParam double maxPrice) {
+    return productService.filterByMaxPrice(maxPrice);
+}
+
+    @GetMapping("/filter/rating")
+    public List<Product> filterByMinRating(@RequestParam double minRating) {
+    return productService.filterByMinRating(minRating);
+}
 
     @GetMapping("/compare")
     public ProductComparison compareProducts(@RequestParam List<Long> ids) {
@@ -38,7 +52,7 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-public Product updateProduct(@PathVariable Long id,
+    public Product updateProduct(@PathVariable Long id,
                              @RequestBody Product product) {
     return productService.updateProduct(id, product);
 }

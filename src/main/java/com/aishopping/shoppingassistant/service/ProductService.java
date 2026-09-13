@@ -42,6 +42,17 @@ public class ProductService {
     public List<Product> searchProducts(String name) {
         return productRepository.findByNameContainingIgnoreCase(name);
     }
+    public List<Product> filterByCategory(String category) {
+    return productRepository.findByCategoryIgnoreCase(category);
+}
+
+    public List<Product> filterByMaxPrice(double price) {
+    return productRepository.findByPriceLessThanEqual(price);
+}
+
+    public List<Product> filterByMinRating(double rating) {
+    return productRepository.findByRatingGreaterThanEqual(rating);
+}
 
     public ProductComparison compareProducts(List<Long> ids) {
 
