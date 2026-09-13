@@ -2,8 +2,11 @@ package com.aishopping.shoppingassistant.controller;
 
 import com.aishopping.shoppingassistant.model.Product;
 import com.aishopping.shoppingassistant.model.ProductComparison;
+import com.aishopping.shoppingassistant.service.ProductEvaluationService;
 import com.aishopping.shoppingassistant.service.ProductService;
 import org.springframework.web.bind.annotation.*;
+import com.aishopping.shoppingassistant.service.ProductEvaluationService;
+import com.aishopping.shoppingassistant.service.ProductRankingService;
 
 import java.util.List;
 
@@ -12,11 +15,16 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+    private final ProductEvaluationService productEvaluationService;
+    private final ProductRankingService productRankingService;
 
-    public ProductController(ProductService productService) {
-        this.productService = productService;
-    }
-
+    public ProductController(ProductService productService,
+                         ProductEvaluationService productEvaluationService,
+                         ProductRankingService productRankingService) {
+    this.productService = productService;
+    this.productEvaluationService = productEvaluationService;
+    this.productRankingService = productRankingService;
+}
     @GetMapping
     public List<Product> getAllProducts() {
         return productService.getAllProducts();
@@ -45,6 +53,23 @@ public class ProductController {
     public ProductComparison compareProducts(@RequestParam List<Long> ids) {
         return productService.compareProducts(ids);
     }
+    @GetMapping("/{id}/score")
+public double getProductScore(@PathVariable Long id) {
+
+    Product product = productService.getAllProducts()
+            .stream()
+            .filter(p -> p.getId().equals(id))
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Product not found"));
+
+    return productEvaluationService.calculateScore(product);
+}
+    @GetMapping("/rank")
+    public List<Product> rankProducts() {
+    List<Product> products = productService.getAllProducts();
+
+    return productRankingService.rankProducts(products);
+}
 
     @PostMapping
     public Product addProduct(@RequestBody Product product) {
