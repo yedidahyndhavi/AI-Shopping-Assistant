@@ -2,11 +2,15 @@ package com.aishopping.shoppingassistant.controller;
 
 import com.aishopping.shoppingassistant.model.Product;
 import com.aishopping.shoppingassistant.model.ProductComparison;
+import com.aishopping.shoppingassistant.model.RecommendationRequest;
 import com.aishopping.shoppingassistant.service.ProductEvaluationService;
 import com.aishopping.shoppingassistant.service.ProductService;
 import org.springframework.web.bind.annotation.*;
 import com.aishopping.shoppingassistant.service.ProductEvaluationService;
 import com.aishopping.shoppingassistant.service.ProductRankingService;
+import com.aishopping.shoppingassistant.model.RecommendationRequest;
+import com.aishopping.shoppingassistant.service.ProductRecommendationService;
+
 
 import java.util.List;
 
@@ -17,13 +21,17 @@ public class ProductController {
     private final ProductService productService;
     private final ProductEvaluationService productEvaluationService;
     private final ProductRankingService productRankingService;
+    private final ProductRecommendationService productRecommendationService;
 
-    public ProductController(ProductService productService,
+   public ProductController(ProductService productService,
                          ProductEvaluationService productEvaluationService,
-                         ProductRankingService productRankingService) {
+                         ProductRankingService productRankingService,
+                         ProductRecommendationService productRecommendationService) {
+
     this.productService = productService;
     this.productEvaluationService = productEvaluationService;
     this.productRankingService = productRankingService;
+    this.productRecommendationService = productRecommendationService;
 }
     @GetMapping
     public List<Product> getAllProducts() {
@@ -80,5 +88,11 @@ public double getProductScore(@PathVariable Long id) {
     public Product updateProduct(@PathVariable Long id,
                              @RequestBody Product product) {
     return productService.updateProduct(id, product);
+}
+    @PostMapping("/recommend")
+    public Product recommendBestProduct(
+        @RequestBody RecommendationRequest request) {
+
+    return productRecommendationService.recommendBestProduct(request);
 }
 }
