@@ -10,6 +10,7 @@ import com.aishopping.shoppingassistant.service.ProductEvaluationService;
 import com.aishopping.shoppingassistant.service.ProductRankingService;
 import com.aishopping.shoppingassistant.model.RecommendationRequest;
 import com.aishopping.shoppingassistant.service.ProductRecommendationService;
+import com.aishopping.shoppingassistant.model.RecommendationResponse;
 
 
 import java.util.List;
@@ -90,7 +91,7 @@ public double getProductScore(@PathVariable Long id) {
     return productService.updateProduct(id, product);
 }
     @PostMapping("/recommend")
-    public Product recommendBestProduct(
+public RecommendationResponse recommendBestProduct(
         @RequestBody RecommendationRequest request) {
 
     return productRecommendationService.recommendBestProduct(request);

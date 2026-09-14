@@ -2,6 +2,7 @@ package com.aishopping.shoppingassistant.service;
 
 import com.aishopping.shoppingassistant.model.Product;
 import com.aishopping.shoppingassistant.model.RecommendationRequest;
+import com.aishopping.shoppingassistant.model.RecommendationResponse;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,22 +13,27 @@ public class ProductRecommendationService {
 
     private final ProductService productService;
     private final ProductRankingService productRankingService;
+    private final ProductEvaluationService productEvaluationService;
 
     public ProductRecommendationService(
             ProductService productService,
-            ProductRankingService productRankingService) {
+            ProductRankingService productRankingService,
+            ProductEvaluationService productEvaluationService) {
 
         this.productService = productService;
         this.productRankingService = productRankingService;
+        this.productEvaluationService = productEvaluationService;
     }
 
-    public Product recommendBestProduct(RecommendationRequest request) {
+    public RecommendationResponse recommendBestProduct(
+            RecommendationRequest request) {
 
         List<Product> products = productService.getAllProducts();
 
         List<Product> matchingProducts = products.stream()
                 .filter(product ->
-                        product.getCategory().equalsIgnoreCase(request.getCategory()))
+                        product.getCategory().equalsIgnoreCase(
+                                request.getCategory()))
                 .filter(product ->
                         product.getPrice() <= request.getMaxPrice())
                 .filter(product ->
@@ -36,13 +42,24 @@ public class ProductRecommendationService {
 
         if (matchingProducts.isEmpty()) {
             throw new RuntimeException(
-                    "No products match the given preferences"
-            );
+                    "No products match the given preferences");
         }
 
         List<Product> rankedProducts =
                 productRankingService.rankProducts(matchingProducts);
 
-        return rankedProducts.get(0);
+        Product recommendedProduct = rankedProducts.get(0);
+
+        double score =
+                productEvaluationService.calculateScore(recommendedProduct);
+
+        String reason =
+                "Best product matching your category, budget, and minimum rating preferences";
+
+        return new RecommendationResponse(
+                recommendedProduct,
+                score,
+                reason
+        );
     }
 }
