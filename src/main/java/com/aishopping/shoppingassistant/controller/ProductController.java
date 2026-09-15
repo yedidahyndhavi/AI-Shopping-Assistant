@@ -14,6 +14,7 @@ import com.aishopping.shoppingassistant.service.ProductRecommendationService;
 import com.aishopping.shoppingassistant.model.RecommendationResponse;
 import com.aishopping.shoppingassistant.model.NaturalLanguageQueryRequest;
 import com.aishopping.shoppingassistant.service.NaturalLanguageQueryService;
+import com.aishopping.shoppingassistant.model.RecommendationListResponse;
 
 import java.util.List;
 
@@ -100,6 +101,14 @@ public RecommendationResponse recommendBestProduct(
         @RequestBody RecommendationRequest request) {
 
     return productRecommendationService.recommendBestProduct(request);
+}
+@PostMapping("/recommend/top")
+public RecommendationListResponse recommendTopProducts(
+        @RequestBody RecommendationRequest request,
+        @RequestParam(defaultValue = "3") int limit) {
+
+    return productRecommendationService
+            .recommendTopProducts(request, limit);
 }
 @PostMapping("/recommend/query")
 public RecommendationResponse recommendFromQuery(
