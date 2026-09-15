@@ -120,4 +120,11 @@ public RecommendationResponse recommendFromQuery(
     return productRecommendationService
             .recommendBestProduct(preferences);
 }
+@PostMapping("/recommend/personalized")
+public Product recommendPersonalizedProduct(
+        @RequestBody RecommendationRequest request) {
+
+    return productRecommendationService
+            .recommendPersonalizedProduct(request);
+}
 }

@@ -17,4 +17,30 @@ public class ProductEvaluationService {
 
         return ratingScore + priceScore;
     }
+    public double calculatePersonalizedScore(
+        Product product,
+        double priceWeight,
+        double ratingWeight) {
+
+    double totalWeight = priceWeight + ratingWeight;
+
+    if (totalWeight <= 0) {
+        priceWeight = 0.3;
+        ratingWeight = 0.7;
+        totalWeight = 1.0;
+    }
+
+    priceWeight = priceWeight / totalWeight;
+    ratingWeight = ratingWeight / totalWeight;
+
+    double ratingScore = (product.getRating() / 5.0) * 100;
+
+    double priceScore = Math.max(
+            0,
+            100 - (product.getPrice() / 100000) * 100
+    );
+
+    return (ratingScore * ratingWeight)
+            + (priceScore * priceWeight);
+}
 }

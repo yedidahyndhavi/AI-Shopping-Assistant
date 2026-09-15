@@ -5,6 +5,8 @@ public class RecommendationRequest {
     private String category;
     private double maxPrice;
     private double minRating;
+    private double priceWeight;
+private double ratingWeight;
 
     public RecommendationRequest() {
     }
@@ -40,4 +42,19 @@ public class RecommendationRequest {
     public void setMinRating(double minRating) {
         this.minRating = minRating;
     }
+    public double getPriceWeight() {
+    return priceWeight;
+}
+
+public void setPriceWeight(double priceWeight) {
+    this.priceWeight = priceWeight;
+}
+
+public double getRatingWeight() {
+    return ratingWeight;
+}
+
+public void setRatingWeight(double ratingWeight) {
+    this.ratingWeight = ratingWeight;
+}
 }

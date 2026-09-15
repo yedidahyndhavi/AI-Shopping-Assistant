@@ -63,6 +63,45 @@ public class ProductRecommendationService {
                 reason
         );
     }
+    public Product recommendPersonalizedProduct(
+        RecommendationRequest request) {
+
+    List<Product> products = productService.getAllProducts();
+
+    List<Product> matchingProducts = products.stream()
+            .filter(product ->
+                    product.getCategory().equalsIgnoreCase(
+                            request.getCategory()))
+            .filter(product ->
+                    product.getPrice() <= request.getMaxPrice())
+            .filter(product ->
+                    product.getRating() >= request.getMinRating())
+            .sorted((product1, product2) -> {
+
+                double score1 =
+                        productEvaluationService.calculatePersonalizedScore(
+                                product1,
+                                request.getPriceWeight(),
+                                request.getRatingWeight());
+
+                double score2 =
+                        productEvaluationService.calculatePersonalizedScore(
+                                product2,
+                                request.getPriceWeight(),
+                                request.getRatingWeight());
+
+                return Double.compare(score2, score1);
+            })
+            .collect(Collectors.toList());
+
+    if (matchingProducts.isEmpty()) {
+        throw new RuntimeException(
+                "No products match the given preferences");
+    }
+
+    return matchingProducts.get(0);
+}
+
     public RecommendationListResponse recommendTopProducts(
         RecommendationRequest request, int limit) {
 
