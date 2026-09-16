@@ -2,6 +2,7 @@ package com.aishopping.shoppingassistant.controller;
 
 import com.aishopping.shoppingassistant.model.Product;
 import com.aishopping.shoppingassistant.model.ProductComparison;
+import com.aishopping.shoppingassistant.model.ProductComparisonResponse;
 import com.aishopping.shoppingassistant.model.RecommendationRequest;
 import com.aishopping.shoppingassistant.service.NaturalLanguageQueryService;
 import com.aishopping.shoppingassistant.service.ProductEvaluationService;
@@ -15,6 +16,7 @@ import com.aishopping.shoppingassistant.model.RecommendationResponse;
 import com.aishopping.shoppingassistant.model.NaturalLanguageQueryRequest;
 import com.aishopping.shoppingassistant.service.NaturalLanguageQueryService;
 import com.aishopping.shoppingassistant.model.RecommendationListResponse;
+import com.aishopping.shoppingassistant.model.ProductComparisonResponse;
 
 import java.util.List;
 
@@ -68,6 +70,12 @@ public class ProductController {
     public ProductComparison compareProducts(@RequestParam List<Long> ids) {
         return productService.compareProducts(ids);
     }
+    @GetMapping("/compare/detailed")
+    public ProductComparisonResponse compareProductsDetailed(
+        @RequestParam List<Long> ids) {
+
+    return productService.compareProductsDetailed(ids);
+}
     @GetMapping("/{id}/score")
     public double getProductScore(@PathVariable Long id) {
 

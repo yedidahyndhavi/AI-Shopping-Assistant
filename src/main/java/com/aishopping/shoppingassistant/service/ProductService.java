@@ -4,6 +4,7 @@ import com.aishopping.shoppingassistant.model.Product;
 import com.aishopping.shoppingassistant.model.ProductComparison;
 import com.aishopping.shoppingassistant.repository.ProductRepository;
 import org.springframework.stereotype.Service;
+import com.aishopping.shoppingassistant.model.ProductComparisonResponse;
 
 import java.util.List;
 
@@ -85,4 +86,51 @@ public class ProductService {
                 cheaperProduct
         );
     }
+    public ProductComparisonResponse compareProductsDetailed(List<Long> ids) {
+
+    List<Product> products = productRepository.findAllById(ids);
+
+    if (products.size() != 2) {
+        throw new IllegalArgumentException(
+                "Exactly two products are required for comparison");
+    }
+
+    Product product1 = products.get(0);
+    Product product2 = products.get(1);
+
+    double priceDifference =
+            Math.abs(product1.getPrice() - product2.getPrice());
+
+    String cheaperProduct;
+
+    if (product1.getPrice() < product2.getPrice()) {
+        cheaperProduct = product1.getName();
+    } else if (product2.getPrice() < product1.getPrice()) {
+        cheaperProduct = product2.getName();
+    } else {
+        cheaperProduct = "Same price";
+    }
+
+    double ratingDifference =
+            Math.abs(product1.getRating() - product2.getRating());
+
+    String higherRatedProduct;
+
+    if (product1.getRating() > product2.getRating()) {
+        higherRatedProduct = product1.getName();
+    } else if (product2.getRating() > product1.getRating()) {
+        higherRatedProduct = product2.getName();
+    } else {
+        higherRatedProduct = "Same rating";
+    }
+
+    return new ProductComparisonResponse(
+            product1,
+            product2,
+            priceDifference,
+            cheaperProduct,
+            ratingDifference,
+            higherRatedProduct
+    );
+}
 }
