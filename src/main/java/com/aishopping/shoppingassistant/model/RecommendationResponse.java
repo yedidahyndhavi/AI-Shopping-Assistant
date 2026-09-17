@@ -5,6 +5,7 @@ public class RecommendationResponse {
     private Product recommendedProduct;
     private double score;
     private String reason;
+    private RecommendationExplanation explanation;
 
     public RecommendationResponse() {
     }
@@ -16,6 +17,17 @@ public class RecommendationResponse {
         this.score = score;
         this.reason = reason;
     }
+    public RecommendationResponse(
+        Product recommendedProduct,
+        double score,
+        String reason,
+        RecommendationExplanation explanation) {
+
+    this.recommendedProduct = recommendedProduct;
+    this.score = score;
+    this.reason = reason;
+    this.explanation = explanation;
+}
 
     public Product getRecommendedProduct() {
         return recommendedProduct;
@@ -39,5 +51,13 @@ public class RecommendationResponse {
 
     public void setReason(String reason) {
         this.reason = reason;
+    }
+
+    public RecommendationExplanation getExplanation() {
+        return explanation;
+    }
+
+    public void setExplanation(RecommendationExplanation explanation) {
+        this.explanation = explanation;
     }
 }

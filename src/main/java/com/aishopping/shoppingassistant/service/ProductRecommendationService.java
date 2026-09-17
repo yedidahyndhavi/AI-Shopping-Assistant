@@ -1,6 +1,7 @@
 package com.aishopping.shoppingassistant.service;
 
 import com.aishopping.shoppingassistant.model.Product;
+import com.aishopping.shoppingassistant.model.RecommendationExplanation;
 import com.aishopping.shoppingassistant.model.RecommendationRequest;
 import com.aishopping.shoppingassistant.model.RecommendationResponse;
 import org.springframework.stereotype.Service;
@@ -8,6 +9,8 @@ import com.aishopping.shoppingassistant.model.RecommendationListResponse;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import com.aishopping.shoppingassistant.model.RecommendationExplanation;
+import com.aishopping.shoppingassistant.model.RecommendationExplanation;
 
 @Service
 public class ProductRecommendationService {
@@ -55,13 +58,43 @@ public class ProductRecommendationService {
                 productEvaluationService.calculateScore(recommendedProduct);
 
         String reason =
-                "Best product matching your category, budget, and minimum rating preferences";
+        "Best product matching your category, budget, and minimum rating preferences";
 
-        return new RecommendationResponse(
-                recommendedProduct,
-                score,
-                reason
+String budgetMessage =
+        "Price ₹" + recommendedProduct.getPrice()
+        + " is within your maximum budget of ₹"
+        + request.getMaxPrice();
+
+String ratingMessage =
+        "Rating " + recommendedProduct.getRating()
+        + " meets your minimum rating requirement of "
+        + request.getMinRating();
+
+String preferenceMessage;
+
+if (request.getPriceWeight() > request.getRatingWeight()) {
+    preferenceMessage =
+            "Recommendation gives higher importance to your price preference";
+} else if (request.getRatingWeight() > request.getPriceWeight()) {
+    preferenceMessage =
+            "Recommendation gives higher importance to your rating preference";
+} else {
+    preferenceMessage =
+            "Recommendation gives equal importance to price and rating";
+}
+
+RecommendationExplanation explanation =
+        new RecommendationExplanation(
+                budgetMessage,
+                ratingMessage,
+                preferenceMessage
         );
+return new RecommendationResponse(
+        recommendedProduct,
+        score,
+        reason,
+        explanation
+);
     }
     public Product recommendPersonalizedProduct(
         RecommendationRequest request) {
