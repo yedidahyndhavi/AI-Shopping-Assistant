@@ -6,17 +6,28 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProductEvaluationService {
 
-    public double calculateScore(Product product) {
+public double calculateScore(Product product) {
 
-        double ratingScore = (product.getRating() / 5.0) * 70;
+    double ratingScore = calculateRatingScore(product);
 
-        double priceScore = Math.max(
-                0,
-                30 - (product.getPrice() / 100000) * 30
-        );
+    double priceScore = calculatePriceScore(product);
 
-        return ratingScore + priceScore;
-    }
+    return (ratingScore * 0.60)
+            + (priceScore * 0.40);
+}
+
+private double calculateRatingScore(Product product) {
+
+    return (product.getRating() / 5.0) * 100;
+}
+
+private double calculatePriceScore(Product product) {
+
+    return Math.max(
+            0,
+            100 - (product.getPrice() / 100000) * 100
+    );
+}
     public double calculatePersonalizedScore(
         Product product,
         double priceWeight,
