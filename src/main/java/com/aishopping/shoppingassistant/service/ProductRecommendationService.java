@@ -109,8 +109,34 @@ public class ProductRecommendationService {
         // -----------------------------------------------------
 
         List<Product> rankedProducts =
+        new java.util.ArrayList<>(
                 productRankingService.rankProducts(
-                        matchingProducts);
+                        matchingProducts));
+
+if (request.getPreferredBrand() != null
+        && !request.getPreferredBrand().isBlank()) {
+
+    rankedProducts.sort((product1, product2) -> {
+
+        boolean product1Matches =
+                product1.getBrand().equalsIgnoreCase(
+                        request.getPreferredBrand());
+
+        boolean product2Matches =
+                product2.getBrand().equalsIgnoreCase(
+                        request.getPreferredBrand());
+
+        if (product1Matches && !product2Matches) {
+            return -1;
+        }
+
+        if (!product1Matches && product2Matches) {
+            return 1;
+        }
+
+        return 0;
+    });
+}
 
         Product recommendedProduct =
                 rankedProducts.get(0);

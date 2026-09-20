@@ -6,8 +6,16 @@ public class RecommendationRequest {
     private double maxPrice;
     private double minRating;
     private double priceWeight;
-private double ratingWeight;
+    private double ratingWeight;
+    private String preferredBrand;
 
+    public String getPreferredBrand() {
+    return preferredBrand;
+}
+
+public void setPreferredBrand(String preferredBrand) {
+    this.preferredBrand = preferredBrand;
+}
     public RecommendationRequest() {
     }
 
