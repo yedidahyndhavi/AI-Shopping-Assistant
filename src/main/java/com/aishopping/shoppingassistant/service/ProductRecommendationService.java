@@ -48,9 +48,9 @@ public class ProductRecommendationService {
                         product.getRating() >= request.getMinRating())
                 .collect(Collectors.toList());
 
-        // -----------------------------------------------------
+        // =====================================================
         // DAY 18 - FALLBACK FOR NO EXACT MATCH
-        // -----------------------------------------------------
+        // =====================================================
 
         if (matchingProducts.isEmpty()) {
 
@@ -58,6 +58,7 @@ public class ProductRecommendationService {
                     findAlternativeProducts(request);
 
             if (alternatives.isEmpty()) {
+
                 throw new RuntimeException(
                         "No products found for the requested category");
             }
@@ -85,15 +86,62 @@ public class ProductRecommendationService {
                     + " compared with your minimum rating requirement of "
                     + request.getMinRating();
 
-            String preferenceMessage =
-                    "This product was selected as the closest available "
-                    + "alternative to your requested preferences";
+            String preferenceMessage;
+
+            if (request.getPriceWeight()
+                    > request.getRatingWeight()) {
+
+                preferenceMessage =
+                        "Recommendation gives higher importance "
+                        + "to your price preference";
+
+            } else if (request.getRatingWeight()
+                    > request.getPriceWeight()) {
+
+                preferenceMessage =
+                        "Recommendation gives higher importance "
+                        + "to your rating preference";
+
+            } else {
+
+                preferenceMessage =
+                        "Recommendation gives equal importance "
+                        + "to price and rating";
+            }
+
+            String brandMessage;
+
+            if (request.getPreferredBrand() != null
+                    && !request.getPreferredBrand().isBlank()) {
+
+                if (alternativeProduct.getBrand().equalsIgnoreCase(
+                        request.getPreferredBrand())) {
+
+                    brandMessage =
+                            "The recommended alternative matches "
+                            + "your preferred brand: "
+                            + request.getPreferredBrand();
+
+                } else {
+
+                    brandMessage =
+                            "The recommended alternative does not "
+                            + "match your preferred brand: "
+                            + request.getPreferredBrand();
+                }
+
+            } else {
+
+                brandMessage =
+                        "No specific brand preference was provided";
+            }
 
             RecommendationExplanation explanation =
                     new RecommendationExplanation(
                             budgetMessage,
                             ratingMessage,
-                            preferenceMessage
+                            preferenceMessage,
+                            brandMessage
                     );
 
             return new RecommendationResponse(
@@ -104,39 +152,43 @@ public class ProductRecommendationService {
             );
         }
 
-        // -----------------------------------------------------
+        // =====================================================
         // RANK MATCHING PRODUCTS
-        // -----------------------------------------------------
+        // =====================================================
 
         List<Product> rankedProducts =
-        new java.util.ArrayList<>(
-                productRankingService.rankProducts(
-                        matchingProducts));
+                new java.util.ArrayList<>(
+                        productRankingService.rankProducts(
+                                matchingProducts));
 
-if (request.getPreferredBrand() != null
-        && !request.getPreferredBrand().isBlank()) {
+        // =====================================================
+        // DAY 20 - PREFERRED BRAND
+        // =====================================================
 
-    rankedProducts.sort((product1, product2) -> {
+        if (request.getPreferredBrand() != null
+                && !request.getPreferredBrand().isBlank()) {
 
-        boolean product1Matches =
-                product1.getBrand().equalsIgnoreCase(
-                        request.getPreferredBrand());
+            rankedProducts.sort((product1, product2) -> {
 
-        boolean product2Matches =
-                product2.getBrand().equalsIgnoreCase(
-                        request.getPreferredBrand());
+                boolean product1Matches =
+                        product1.getBrand().equalsIgnoreCase(
+                                request.getPreferredBrand());
 
-        if (product1Matches && !product2Matches) {
-            return -1;
+                boolean product2Matches =
+                        product2.getBrand().equalsIgnoreCase(
+                                request.getPreferredBrand());
+
+                if (product1Matches && !product2Matches) {
+                    return -1;
+                }
+
+                if (!product1Matches && product2Matches) {
+                    return 1;
+                }
+
+                return 0;
+            });
         }
-
-        if (!product1Matches && product2Matches) {
-            return 1;
-        }
-
-        return 0;
-    });
-}
 
         Product recommendedProduct =
                 rankedProducts.get(0);
@@ -149,9 +201,9 @@ if (request.getPreferredBrand() != null
                 "Best product matching your category, budget, "
                 + "and minimum rating preferences";
 
-        // -----------------------------------------------------
+        // =====================================================
         // STRUCTURED EXPLANATION
-        // -----------------------------------------------------
+        // =====================================================
 
         String budgetMessage =
                 "Price ₹"
@@ -188,11 +240,42 @@ if (request.getPreferredBrand() != null
                     + "to price and rating";
         }
 
+        // =====================================================
+        // DAY 21 - BRAND EXPLANATION
+        // =====================================================
+
+        String brandMessage;
+
+        if (request.getPreferredBrand() != null
+                && !request.getPreferredBrand().isBlank()) {
+
+            if (recommendedProduct.getBrand().equalsIgnoreCase(
+                    request.getPreferredBrand())) {
+
+                brandMessage =
+                        "The recommended product matches "
+                        + "your preferred brand: "
+                        + request.getPreferredBrand();
+
+            } else {
+
+                brandMessage =
+                        "No product from your preferred brand "
+                        + "matched all your requirements";
+            }
+
+        } else {
+
+            brandMessage =
+                    "No specific brand preference was provided";
+        }
+
         RecommendationExplanation explanation =
                 new RecommendationExplanation(
                         budgetMessage,
                         ratingMessage,
-                        preferenceMessage
+                        preferenceMessage,
+                        brandMessage
                 );
 
         return new RecommendationResponse(
@@ -246,7 +329,7 @@ if (request.getPreferredBrand() != null
     }
 
     // =========================================================
-    // RECOMMEND TOP PRODUCTS
+    // TOP-N PRODUCT RECOMMENDATIONS
     // =========================================================
 
     public RecommendationListResponse recommendTopProducts(
