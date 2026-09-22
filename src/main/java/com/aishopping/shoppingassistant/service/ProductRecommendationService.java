@@ -35,6 +35,7 @@ public class ProductRecommendationService {
     public RecommendationResponse recommendBestProduct(
             RecommendationRequest request) {
 
+                request.validate();
         List<Product> products =
                 productService.getAllProducts();
 
