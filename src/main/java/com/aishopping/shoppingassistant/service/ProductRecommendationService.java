@@ -336,6 +336,15 @@ public class ProductRecommendationService {
     public RecommendationListResponse recommendTopProducts(
             RecommendationRequest request,
             int limit) {
+                request.validate();
+                if (limit <= 0) {
+    throw new IllegalArgumentException(
+            "Recommendation limit must be greater than 0");
+}
+if (limit > 10) {
+    throw new IllegalArgumentException(
+            "Recommendation limit cannot exceed 10");
+}
 
         List<Product> products =
                 productService.getAllProducts();
@@ -391,6 +400,7 @@ public class ProductRecommendationService {
 
     public Product recommendPersonalizedProduct(
             RecommendationRequest request) {
+                request.validate();
 
         List<Product> products =
                 productService.getAllProducts();
