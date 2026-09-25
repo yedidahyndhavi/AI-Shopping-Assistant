@@ -35,7 +35,8 @@ public class ProductRecommendationService {
     public RecommendationResponse recommendBestProduct(
             RecommendationRequest request) {
 
-                request.validate();
+        request.validate();
+
         List<Product> products =
                 productService.getAllProducts();
 
@@ -50,7 +51,7 @@ public class ProductRecommendationService {
                 .collect(Collectors.toList());
 
         // =====================================================
-        // DAY 18 - FALLBACK FOR NO EXACT MATCH
+        // FALLBACK FOR NO EXACT MATCH
         // =====================================================
 
         if (matchingProducts.isEmpty()) {
@@ -163,7 +164,7 @@ public class ProductRecommendationService {
                                 matchingProducts));
 
         // =====================================================
-        // DAY 20 - PREFERRED BRAND
+        // PREFERRED BRAND
         // =====================================================
 
         if (request.getPreferredBrand() != null
@@ -242,7 +243,7 @@ public class ProductRecommendationService {
         }
 
         // =====================================================
-        // DAY 21 - BRAND EXPLANATION
+        // BRAND EXPLANATION
         // =====================================================
 
         String brandMessage;
@@ -288,7 +289,7 @@ public class ProductRecommendationService {
     }
 
     // =========================================================
-    // DAY 18 - FIND ALTERNATIVE PRODUCTS
+    // FIND ALTERNATIVE PRODUCTS
     // =========================================================
 
     private List<Product> findAlternativeProducts(
@@ -336,15 +337,20 @@ public class ProductRecommendationService {
     public RecommendationListResponse recommendTopProducts(
             RecommendationRequest request,
             int limit) {
-                request.validate();
-                if (limit <= 0) {
-    throw new IllegalArgumentException(
-            "Recommendation limit must be greater than 0");
-}
-if (limit > 10) {
-    throw new IllegalArgumentException(
-            "Recommendation limit cannot exceed 10");
-}
+
+        request.validate();
+
+        if (limit <= 0) {
+
+            throw new IllegalArgumentException(
+                    "Recommendation limit must be greater than 0");
+        }
+
+        if (limit > 10) {
+
+            throw new IllegalArgumentException(
+                    "Recommendation limit cannot exceed 10");
+        }
 
         List<Product> products =
                 productService.getAllProducts();
@@ -400,7 +406,8 @@ if (limit > 10) {
 
     public Product recommendPersonalizedProduct(
             RecommendationRequest request) {
-                request.validate();
+
+        request.validate();
 
         List<Product> products =
                 productService.getAllProducts();
@@ -413,26 +420,6 @@ if (limit > 10) {
                         product.getPrice() <= request.getMaxPrice())
                 .filter(product ->
                         product.getRating() >= request.getMinRating())
-                .sorted((product1, product2) -> {
-
-                    double score1 =
-                            productEvaluationService
-                                    .calculatePersonalizedScore(
-                                            product1,
-                                            request.getPriceWeight(),
-                                            request.getRatingWeight());
-
-                    double score2 =
-                            productEvaluationService
-                                    .calculatePersonalizedScore(
-                                            product2,
-                                            request.getPriceWeight(),
-                                            request.getRatingWeight());
-
-                    return Double.compare(
-                            score2,
-                            score1);
-                })
                 .collect(Collectors.toList());
 
         if (matchingProducts.isEmpty()) {
@@ -441,6 +428,16 @@ if (limit > 10) {
                     "No products match the given preferences");
         }
 
-        return matchingProducts.get(0);
+        // =====================================================
+        // DAY 24 - USE PREFERENCE-AWARE RANKING SERVICE
+        // =====================================================
+
+        List<Product> rankedProducts =
+                productRankingService.rankProductsByPreference(
+                        matchingProducts,
+                        request.getPriceWeight(),
+                        request.getRatingWeight());
+
+        return rankedProducts.get(0);
     }
 }
