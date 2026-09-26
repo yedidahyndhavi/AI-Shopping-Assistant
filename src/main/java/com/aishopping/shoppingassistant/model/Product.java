@@ -19,6 +19,7 @@ public class Product {
     private String category;
     private double rating;
     private String description;
+    private boolean available;
 
     public Product() {
     }
@@ -81,5 +82,12 @@ public String getDescription() {
 
 public void setDescription(String description) {
     this.description = description;
+}
+public boolean isAvailable() {
+    return available;
+}
+
+public void setAvailable(boolean available) {
+    this.available = available;
 }
 }

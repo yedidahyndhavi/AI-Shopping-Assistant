@@ -41,14 +41,16 @@ public class ProductRecommendationService {
                 productService.getAllProducts();
 
         List<Product> matchingProducts = products.stream()
-                .filter(product ->
-                        product.getCategory().equalsIgnoreCase(
-                                request.getCategory()))
-                .filter(product ->
-                        product.getPrice() <= request.getMaxPrice())
-                .filter(product ->
-                        product.getRating() >= request.getMinRating())
-                .collect(Collectors.toList());
+        .filter(product ->
+                product.getCategory().equalsIgnoreCase(
+                        request.getCategory()))
+        .filter(Product::isAvailable)
+        .filter(product ->
+                product.getPrice() <= request.getMaxPrice())
+        .filter(product ->
+                product.getRating() >= request.getMinRating())
+        .collect(Collectors.toList());
+                
 
         // =====================================================
         // FALLBACK FOR NO EXACT MATCH
