@@ -5,17 +5,25 @@ import com.aishopping.shoppingassistant.model.ProductComparison;
 import com.aishopping.shoppingassistant.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 import com.aishopping.shoppingassistant.model.ProductComparisonResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.aishopping.shoppingassistant.service.ProductEvaluationService;
 
 import java.util.List;
 
 @Service
 public class ProductService {
 
-    private final ProductRepository productRepository;
+   private final ProductRepository productRepository;
+private final ProductEvaluationService productEvaluationService;
+    
 
-    public ProductService(ProductRepository productRepository) {
-        this.productRepository = productRepository;
-    }
+    public ProductService(
+        ProductRepository productRepository,
+        ProductEvaluationService productEvaluationService) {
+
+    this.productRepository = productRepository;
+    this.productEvaluationService = productEvaluationService;
+}
 
     public List<Product> getAllProducts() {
         return productRepository.findAll();
@@ -97,6 +105,32 @@ public class ProductService {
 
     Product product1 = products.get(0);
     Product product2 = products.get(1);
+    double product1Score =
+        productEvaluationService.calculateScore(product1);
+
+double product2Score =
+        productEvaluationService.calculateScore(product2);
+        String comparisonSummary;
+
+if (product1Score > product2Score) {
+
+    comparisonSummary =
+            product1.getName()
+            + " has a higher overall score than "
+            + product2.getName();
+
+} else if (product2Score > product1Score) {
+
+    comparisonSummary =
+            product2.getName()
+            + " has a higher overall score than "
+            + product1.getName();
+
+} else {
+
+    comparisonSummary =
+            "Both products have the same overall score";
+}
 
     double priceDifference =
             Math.abs(product1.getPrice() - product2.getPrice());
@@ -125,12 +159,15 @@ public class ProductService {
     }
 
     return new ProductComparisonResponse(
-            product1,
-            product2,
-            priceDifference,
-            cheaperProduct,
-            ratingDifference,
-            higherRatedProduct
-    );
+        product1,
+        product2,
+        priceDifference,
+        cheaperProduct,
+        ratingDifference,
+        higherRatedProduct,
+        product1Score,
+        product2Score,
+        comparisonSummary
+);
 }
 }
