@@ -6,57 +6,59 @@ public class ProductComparisonResponse {
     private Product product2;
 
     private double priceDifference;
-    private String cheaperProduct;
+    private Product cheaperProduct;
 
     private double ratingDifference;
-    private String higherRatedProduct;
-    private double product1Score;
-private double product2Score;
-private String comparisonSummary;
+    private Product higherRatedProduct;
 
+    private double product1Score;
+    private double product2Score;
+
+    private String comparisonSummary;
+
+    // Default constructor
     public ProductComparisonResponse() {
     }
 
+    // Constructor for basic detailed comparison
     public ProductComparisonResponse(
-        Product product1,
-        Product product2,
-        double priceDifference,
-        String cheaperProduct,
-        double ratingDifference,
-        String higherRatedProduct,
-        double product1Score,
-        double product2Score,
-        String comparisonSummary) {
+            Product product1,
+            Product product2,
+            double priceDifference,
+            Product cheaperProduct,
+            double ratingDifference,
+            Product higherRatedProduct) {
 
-    this.product1 = product1;
-    this.product2 = product2;
-    this.priceDifference = priceDifference;
-    this.cheaperProduct = cheaperProduct;
-    this.ratingDifference = ratingDifference;
-    this.higherRatedProduct = higherRatedProduct;
-    this.product1Score = product1Score;
-    this.product2Score = product2Score;
-    this.comparisonSummary = comparisonSummary;
-}
+        this.product1 = product1;
+        this.product2 = product2;
+        this.priceDifference = priceDifference;
+        this.cheaperProduct = cheaperProduct;
+        this.ratingDifference = ratingDifference;
+        this.higherRatedProduct = higherRatedProduct;
+    }
+
+    // Constructor for complete detailed comparison
     public ProductComparisonResponse(
-        Product product1,
-        Product product2,
-        double priceDifference,
-        String cheaperProduct,
-        double ratingDifference,
-        String higherRatedProduct,
-        double product1Score,
-        double product2Score) {
+            Product product1,
+            Product product2,
+            double priceDifference,
+            Product cheaperProduct,
+            double ratingDifference,
+            Product higherRatedProduct,
+            double product1Score,
+            double product2Score,
+            String comparisonSummary) {
 
-    this.product1 = product1;
-    this.product2 = product2;
-    this.priceDifference = priceDifference;
-    this.cheaperProduct = cheaperProduct;
-    this.ratingDifference = ratingDifference;
-    this.higherRatedProduct = higherRatedProduct;
-    this.product1Score = product1Score;
-    this.product2Score = product2Score;
-}
+        this.product1 = product1;
+        this.product2 = product2;
+        this.priceDifference = priceDifference;
+        this.cheaperProduct = cheaperProduct;
+        this.ratingDifference = ratingDifference;
+        this.higherRatedProduct = higherRatedProduct;
+        this.product1Score = product1Score;
+        this.product2Score = product2Score;
+        this.comparisonSummary = comparisonSummary;
+    }
 
     public Product getProduct1() {
         return product1;
@@ -82,11 +84,11 @@ private String comparisonSummary;
         this.priceDifference = priceDifference;
     }
 
-    public String getCheaperProduct() {
+    public Product getCheaperProduct() {
         return cheaperProduct;
     }
 
-    public void setCheaperProduct(String cheaperProduct) {
+    public void setCheaperProduct(Product cheaperProduct) {
         this.cheaperProduct = cheaperProduct;
     }
 
@@ -98,33 +100,35 @@ private String comparisonSummary;
         this.ratingDifference = ratingDifference;
     }
 
-    public String getHigherRatedProduct() {
+    public Product getHigherRatedProduct() {
         return higherRatedProduct;
     }
 
-    public void setHigherRatedProduct(String higherRatedProduct) {
+    public void setHigherRatedProduct(Product higherRatedProduct) {
         this.higherRatedProduct = higherRatedProduct;
     }
+
     public double getProduct1Score() {
-    return product1Score;
-}
+        return product1Score;
+    }
 
-public void setProduct1Score(double product1Score) {
-    this.product1Score = product1Score;
-}
+    public void setProduct1Score(double product1Score) {
+        this.product1Score = product1Score;
+    }
 
-public double getProduct2Score() {
-    return product2Score;
-}
+    public double getProduct2Score() {
+        return product2Score;
+    }
 
-public void setProduct2Score(double product2Score) {
-    this.product2Score = product2Score;
-}
-public String getComparisonSummary() {
-    return comparisonSummary;
-}
+    public void setProduct2Score(double product2Score) {
+        this.product2Score = product2Score;
+    }
 
-public void setComparisonSummary(String comparisonSummary) {
-    this.comparisonSummary = comparisonSummary;
-}
+    public String getComparisonSummary() {
+        return comparisonSummary;
+    }
+
+    public void setComparisonSummary(String comparisonSummary) {
+        this.comparisonSummary = comparisonSummary;
+    }
 }

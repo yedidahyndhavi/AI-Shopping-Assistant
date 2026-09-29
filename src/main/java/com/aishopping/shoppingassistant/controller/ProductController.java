@@ -63,6 +63,10 @@ public class ProductController {
     public List<Product> getAllProducts() {
         return productService.getAllProducts();
     }
+    @GetMapping("/available")
+public List<Product> getAvailableProducts() {
+    return productService.getAvailableProducts();
+}
 
     // =========================================================
     // SEARCH PRODUCTS

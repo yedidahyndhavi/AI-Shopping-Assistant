@@ -6,7 +6,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 @Entity
-
 public class Product {
 
     @Id
@@ -14,80 +13,117 @@ public class Product {
     private Long id;
 
     private String name;
+
     private String brand;
+
     private double price;
+
     private String category;
+
     private double rating;
+
     private String description;
+
     private boolean available;
 
+    // Default constructor
     public Product() {
     }
 
-    public Product(String name, String brand, double price,
-               String category, double rating, String description) {
-    this.name = name;
-    this.brand = brand;
-    this.price = price;
-    this.category = category;
-    this.rating = rating;
-    this.description = description;
-}
+    // Existing constructor
+    public Product(String name,
+                   String brand,
+                   double price,
+                   String category,
+                   double rating,
+                   String description) {
+
+        this.name = name;
+        this.brand = brand;
+        this.price = price;
+        this.category = category;
+        this.rating = rating;
+        this.description = description;
+        this.available = true;
+    }
+
+    // Get ID
     public Long getId() {
         return id;
     }
 
+    // Set ID
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    // Get name
     public String getName() {
         return name;
     }
 
-    public String getBrand() {
-        return brand;
-    }
-
-    public double getPrice() {
-        return price;
-    }
-
+    // Set name
     public void setName(String name) {
         this.name = name;
     }
 
+    // Get brand
+    public String getBrand() {
+        return brand;
+    }
+
+    // Set brand
     public void setBrand(String brand) {
         this.brand = brand;
     }
 
+    // Get price
+    public double getPrice() {
+        return price;
+    }
+
+    // Set price
     public void setPrice(double price) {
         this.price = price;
     }
+
+    // Get category
     public String getCategory() {
-    return category;
-}
+        return category;
+    }
 
-public void setCategory(String category) {
-    this.category = category;
-}
+    // Set category
+    public void setCategory(String category) {
+        this.category = category;
+    }
 
-public double getRating() {
-    return rating;
-}
+    // Get rating
+    public double getRating() {
+        return rating;
+    }
 
-public void setRating(double rating) {
-    this.rating = rating;
-}
+    // Set rating
+    public void setRating(double rating) {
+        this.rating = rating;
+    }
 
-public String getDescription() {
-    return description;
-}
+    // Get description
+    public String getDescription() {
+        return description;
+    }
 
-public void setDescription(String description) {
-    this.description = description;
-}
-public boolean isAvailable() {
-    return available;
-}
+    // Set description
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-public void setAvailable(boolean available) {
-    this.available = available;
-}
+    // Get availability
+    public boolean isAvailable() {
+        return available;
+    }
+
+    // Set availability
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
 }
