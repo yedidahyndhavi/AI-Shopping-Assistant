@@ -33,14 +33,37 @@ function App() {
 
 
   // ============================================================
+  // NATURAL LANGUAGE QUERY STATE
+  // ============================================================
+
+  const [naturalLanguageQuery, setNaturalLanguageQuery] =
+    useState("");
+
+  const [queryRecommendation, setQueryRecommendation] =
+    useState(null);
+
+  const [queryLoading, setQueryLoading] =
+    useState(false);
+
+  const [queryError, setQueryError] =
+    useState("");
+
+
+  // ============================================================
   // COMPARISON STATE
   // ============================================================
 
-  const [allProducts, setAllProducts] = useState([]);
-  const [productsLoading, setProductsLoading] = useState(false);
+  const [allProducts, setAllProducts] =
+    useState([]);
 
-  const [product1Id, setProduct1Id] = useState("");
-  const [product2Id, setProduct2Id] = useState("");
+  const [productsLoading, setProductsLoading] =
+    useState(false);
+
+  const [product1Id, setProduct1Id] =
+    useState("");
+
+  const [product2Id, setProduct2Id] =
+    useState("");
 
   const [comparison, setComparison] =
     useState(null);
@@ -164,7 +187,7 @@ function App() {
 
 
   // ============================================================
-  // GET RECOMMENDATION
+  // GET SMART RECOMMENDATION
   // ============================================================
 
   const getRecommendation = async () => {
@@ -230,10 +253,10 @@ function App() {
         }
       );
 
-      if (!response.ok) {
+      const message =
+        await response.text();
 
-        const message =
-          await response.text();
+      if (!response.ok) {
 
         throw new Error(
           message ||
@@ -243,7 +266,7 @@ function App() {
       }
 
       const data =
-        await response.json();
+        JSON.parse(message);
 
       console.log(
         "Recommendation API response:",
@@ -270,6 +293,111 @@ function App() {
 
     }
   };
+
+
+  // ============================================================
+  // NATURAL LANGUAGE SHOPPING QUERY
+  // ============================================================
+
+  const getNaturalLanguageRecommendation =
+    async () => {
+
+      if (!naturalLanguageQuery.trim()) {
+
+        setQueryError(
+          "Please describe what product you are looking for."
+        );
+
+        return;
+      }
+
+      setQueryLoading(true);
+      setQueryError("");
+      setQueryRecommendation(null);
+
+      try {
+
+        const response = await fetch(
+          "http://localhost:8080/api/products/recommend/query",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json",
+            },
+
+            body: JSON.stringify({
+              query: naturalLanguageQuery
+            }),
+          }
+        );
+
+        const message =
+          await response.text();
+
+        // ======================================================
+        // HANDLE API ERRORS
+        // ======================================================
+
+        if (!response.ok) {
+
+          if (response.status === 404) {
+
+            throw new Error(
+              "No matching products found. Try increasing your budget or changing your requirements."
+            );
+
+          }
+
+          if (response.status === 400) {
+
+            throw new Error(
+              message ||
+              "Please check your shopping requirements."
+            );
+
+          }
+
+          throw new Error(
+            message ||
+            "Unable to process your shopping request."
+          );
+
+        }
+
+
+        // ======================================================
+        // PARSE SUCCESS RESPONSE
+        // ======================================================
+
+        const data =
+          JSON.parse(message);
+
+        console.log(
+          "Natural language query response:",
+          data
+        );
+
+        setQueryRecommendation(data);
+
+      } catch (error) {
+
+        console.error(
+          "Natural language query error:",
+          error
+        );
+
+        setQueryError(
+          error.message ||
+          "Unable to process your shopping request."
+        );
+
+      } finally {
+
+        setQueryLoading(false);
+
+      }
+    };
 
 
   // ============================================================
@@ -306,10 +434,10 @@ function App() {
         `http://localhost:8080/api/products/compare/detailed?ids=${product1Id},${product2Id}`
       );
 
-      if (!response.ok) {
+      const message =
+        await response.text();
 
-        const message =
-          await response.text();
+      if (!response.ok) {
 
         throw new Error(
           message ||
@@ -319,7 +447,7 @@ function App() {
       }
 
       const data =
-        await response.json();
+        JSON.parse(message);
 
       console.log(
         "Comparison API response:",
@@ -349,12 +477,94 @@ function App() {
 
 
   // ============================================================
+  // FORMAT PRICE
+  // ============================================================
+
+  const formatPrice = (price) => {
+
+    if (
+      price === null ||
+      price === undefined
+    ) {
+
+      return "-";
+
+    }
+
+    return Number(price)
+      .toLocaleString("en-IN");
+
+  };
+
+
+  // ============================================================
+  // FORMAT NUMBER
+  // ============================================================
+
+  const formatNumber = (value) => {
+
+    if (
+      value === null ||
+      value === undefined
+    ) {
+
+      return "-";
+
+    }
+
+    return Number(value)
+      .toFixed(2);
+
+  };
+
+
+  // ============================================================
+  // GET NATURAL LANGUAGE RECOMMENDED PRODUCT
+  // ============================================================
+
+  const getQueryProduct = () => {
+
+    if (!queryRecommendation) {
+
+      return null;
+
+    }
+
+    if (
+      queryRecommendation
+        .recommendedProduct
+    ) {
+
+      return queryRecommendation
+        .recommendedProduct;
+
+    }
+
+    if (
+      queryRecommendation.product
+    ) {
+
+      return queryRecommendation.product;
+
+    }
+
+    return null;
+
+  };
+
+
+  const queryProduct =
+    getQueryProduct();
+
+
+  // ============================================================
   // UI
   // ============================================================
 
   return (
 
     <div className="app">
+
 
       {/* ======================================================
           HEADER
@@ -371,7 +581,7 @@ function App() {
 
 
       {/* ======================================================
-          SEARCH
+          PRODUCT SEARCH
       ====================================================== */}
 
       <div className="search-container">
@@ -381,7 +591,9 @@ function App() {
           placeholder="What product are you looking for?"
           value={searchTerm}
           onChange={(event) =>
-            setSearchTerm(event.target.value)
+            setSearchTerm(
+              event.target.value
+            )
           }
         />
 
@@ -395,16 +607,20 @@ function App() {
 
 
       {loading && (
+
         <p>
           Searching products...
         </p>
+
       )}
 
 
       {error && (
+
         <p>
           {error}
         </p>
+
       )}
 
 
@@ -431,11 +647,12 @@ function App() {
 
             <p>
               Price: ₹
-              {product.price.toLocaleString("en-IN")}
+              {formatPrice(product.price)}
             </p>
 
             <p>
-              Rating: ⭐ {product.rating.toFixed(1)}
+              Rating: ⭐{" "}
+              {formatNumber(product.rating)}
             </p>
 
             <p>
@@ -461,7 +678,249 @@ function App() {
 
 
       {/* ======================================================
-          RECOMMENDATION SECTION
+          ASK INTELLIBUY
+      ====================================================== */}
+
+      <div className="recommendation-section">
+
+        <h2>
+          Ask IntelliBuy
+        </h2>
+
+        <p>
+          Describe what you are looking for
+          in natural language.
+        </p>
+
+        <input
+          type="text"
+          placeholder="Example: I need an Apple smartphone under ₹80000 with rating above 4"
+          value={naturalLanguageQuery}
+          onChange={(event) =>
+            setNaturalLanguageQuery(
+              event.target.value
+            )
+          }
+        />
+
+        <button
+          onClick={
+            getNaturalLanguageRecommendation
+          }
+        >
+          Find My Product
+        </button>
+
+      </div>
+
+
+      {/* ======================================================
+          NATURAL LANGUAGE LOADING
+      ====================================================== */}
+
+      {queryLoading && (
+
+        <p>
+          Understanding your requirements...
+        </p>
+
+      )}
+
+
+      {/* ======================================================
+          NATURAL LANGUAGE ERROR
+      ====================================================== */}
+
+      {queryError && (
+
+        <p>
+          {queryError}
+        </p>
+
+      )}
+
+
+      {/* ======================================================
+          NATURAL LANGUAGE RESULT
+      ====================================================== */}
+
+      {queryRecommendation && (
+
+        <div className="recommendation-card">
+
+          <h2>
+            AI Shopping Assistant
+          </h2>
+
+
+          <p>
+            <strong>
+              Your request:
+            </strong>
+          </p>
+
+          <p>
+            "{naturalLanguageQuery}"
+          </p>
+
+
+          {/* RECOMMENDED PRODUCT */}
+
+          {queryProduct && (
+
+            <>
+
+              <h3>
+                {queryProduct.name}
+              </h3>
+
+              <p>
+                Brand:{" "}
+                {queryProduct.brand}
+              </p>
+
+              <p>
+                Price: ₹
+                {formatPrice(
+                  queryProduct.price
+                )}
+              </p>
+
+              <p>
+                Rating: ⭐{" "}
+                {formatNumber(
+                  queryProduct.rating
+                )}
+              </p>
+
+              <p>
+                Category:{" "}
+                {queryProduct.category}
+              </p>
+
+              <p>
+                Availability:{" "}
+                {queryProduct.available
+                  ? "Available"
+                  : "Out of Stock"}
+              </p>
+
+            </>
+
+          )}
+
+
+          {/* SCORE */}
+
+          {queryRecommendation.score !==
+            undefined && (
+
+            <p>
+              Recommendation Score:{" "}
+              <strong>
+                {formatNumber(
+                  queryRecommendation.score
+                )}
+              </strong>
+            </p>
+
+          )}
+
+
+          {/* REASON */}
+
+          {queryRecommendation.reason && (
+
+            <p>
+              <strong>
+                Why this product?
+              </strong>
+
+              <br />
+
+              {queryRecommendation.reason}
+
+            </p>
+
+          )}
+
+
+          {/* EXPLANATION */}
+
+          {queryRecommendation.explanation && (
+
+            <div>
+
+              {queryRecommendation
+                .explanation
+                .budgetMessage && (
+
+                <p>
+                  {
+                    queryRecommendation
+                      .explanation
+                      .budgetMessage
+                  }
+                </p>
+
+              )}
+
+
+              {queryRecommendation
+                .explanation
+                .ratingMessage && (
+
+                <p>
+                  {
+                    queryRecommendation
+                      .explanation
+                      .ratingMessage
+                  }
+                </p>
+
+              )}
+
+
+              {queryRecommendation
+                .explanation
+                .preferenceMessage && (
+
+                <p>
+                  {
+                    queryRecommendation
+                      .explanation
+                      .preferenceMessage
+                  }
+                </p>
+
+              )}
+
+
+              {queryRecommendation
+                .explanation
+                .brandMessage && (
+
+                <p>
+                  {
+                    queryRecommendation
+                      .explanation
+                      .brandMessage
+                  }
+                </p>
+
+              )}
+
+            </div>
+
+          )}
+
+        </div>
+
+      )}
+
+
+      {/* ======================================================
+          MANUAL SMART RECOMMENDATION
       ====================================================== */}
 
       <div className="recommendation-section">
@@ -475,7 +934,9 @@ function App() {
           placeholder="Category (e.g. Smartphone)"
           value={category}
           onChange={(event) =>
-            setCategory(event.target.value)
+            setCategory(
+              event.target.value
+            )
           }
         />
 
@@ -484,7 +945,9 @@ function App() {
           placeholder="Maximum price"
           value={maxPrice}
           onChange={(event) =>
-            setMaxPrice(event.target.value)
+            setMaxPrice(
+              event.target.value
+            )
           }
         />
 
@@ -496,7 +959,9 @@ function App() {
           placeholder="Minimum rating"
           value={minRating}
           onChange={(event) =>
-            setMinRating(event.target.value)
+            setMinRating(
+              event.target.value
+            )
           }
         />
 
@@ -505,7 +970,9 @@ function App() {
           placeholder="Preferred brand (optional)"
           value={preferredBrand}
           onChange={(event) =>
-            setPreferredBrand(event.target.value)
+            setPreferredBrand(
+              event.target.value
+            )
           }
         />
 
@@ -518,22 +985,34 @@ function App() {
       </div>
 
 
+      {/* ======================================================
+          MANUAL RECOMMENDATION LOADING
+      ====================================================== */}
+
       {recommendationLoading && (
+
         <p>
           Finding the best product...
         </p>
-      )}
 
-
-      {recommendationError && (
-        <p>
-          {recommendationError}
-        </p>
       )}
 
 
       {/* ======================================================
-          RECOMMENDATION RESULT
+          MANUAL RECOMMENDATION ERROR
+      ====================================================== */}
+
+      {recommendationError && (
+
+        <p>
+          {recommendationError}
+        </p>
+
+      )}
+
+
+      {/* ======================================================
+          MANUAL RECOMMENDATION RESULT
       ====================================================== */}
 
       {recommendation &&
@@ -564,22 +1043,20 @@ function App() {
 
           <p>
             Price: ₹
-            {
+            {formatPrice(
               recommendation
                 .recommendedProduct
                 .price
-                .toLocaleString("en-IN")
-            }
+            )}
           </p>
 
           <p>
             Rating: ⭐{" "}
-            {
+            {formatNumber(
               recommendation
                 .recommendedProduct
                 .rating
-                .toFixed(1)
-            }
+            )}
           </p>
 
           <p>
@@ -604,9 +1081,9 @@ function App() {
 
           <p>
             Score:{" "}
-            {Number(
+            {formatNumber(
               recommendation.score
-            ).toFixed(2)}
+            )}
           </p>
 
           <p>
@@ -618,37 +1095,61 @@ function App() {
 
             <div>
 
-              <p>
-                {
-                  recommendation
-                    .explanation
-                    .budgetMessage
-                }
-              </p>
+              {recommendation
+                .explanation
+                .budgetMessage && (
 
-              <p>
-                {
-                  recommendation
-                    .explanation
-                    .ratingMessage
-                }
-              </p>
+                <p>
+                  {
+                    recommendation
+                      .explanation
+                      .budgetMessage
+                  }
+                </p>
 
-              <p>
-                {
-                  recommendation
-                    .explanation
-                    .preferenceMessage
-                }
-              </p>
+              )}
 
-              <p>
-                {
-                  recommendation
-                    .explanation
-                    .brandMessage
-                }
-              </p>
+              {recommendation
+                .explanation
+                .ratingMessage && (
+
+                <p>
+                  {
+                    recommendation
+                      .explanation
+                      .ratingMessage
+                  }
+                </p>
+
+              )}
+
+              {recommendation
+                .explanation
+                .preferenceMessage && (
+
+                <p>
+                  {
+                    recommendation
+                      .explanation
+                      .preferenceMessage
+                  }
+                </p>
+
+              )}
+
+              {recommendation
+                .explanation
+                .brandMessage && (
+
+                <p>
+                  {
+                    recommendation
+                      .explanation
+                      .brandMessage
+                  }
+                </p>
+
+              )}
 
             </div>
 
@@ -660,7 +1161,7 @@ function App() {
 
 
       {/* ======================================================
-          COMPARISON SELECTION
+          COMPARE PRODUCTS
       ====================================================== */}
 
       <div className="recommendation-section">
@@ -683,7 +1184,9 @@ function App() {
             <select
               value={product1Id}
               onChange={(event) =>
-                setProduct1Id(event.target.value)
+                setProduct1Id(
+                  event.target.value
+                )
               }
             >
 
@@ -698,7 +1201,7 @@ function App() {
                   value={product.id}
                 >
                   {product.name} - ₹
-                  {product.price.toLocaleString("en-IN")}
+                  {formatPrice(product.price)}
                 </option>
 
               ))}
@@ -709,7 +1212,9 @@ function App() {
             <select
               value={product2Id}
               onChange={(event) =>
-                setProduct2Id(event.target.value)
+                setProduct2Id(
+                  event.target.value
+                )
               }
             >
 
@@ -724,7 +1229,7 @@ function App() {
                   value={product.id}
                 >
                   {product.name} - ₹
-                  {product.price.toLocaleString("en-IN")}
+                  {formatPrice(product.price)}
                 </option>
 
               ))}
@@ -745,17 +1250,29 @@ function App() {
       </div>
 
 
+      {/* ======================================================
+          COMPARISON LOADING
+      ====================================================== */}
+
       {comparisonLoading && (
+
         <p>
           Comparing products...
         </p>
+
       )}
 
 
+      {/* ======================================================
+          COMPARISON ERROR
+      ====================================================== */}
+
       {comparisonError && (
+
         <p>
           {comparisonError}
         </p>
+
       )}
 
 
@@ -824,15 +1341,15 @@ function App() {
 
                 <td>
                   ₹
-                  {comparison.product1.price.toLocaleString(
-                    "en-IN"
+                  {formatPrice(
+                    comparison.product1.price
                   )}
                 </td>
 
                 <td>
                   ₹
-                  {comparison.product2.price.toLocaleString(
-                    "en-IN"
+                  {formatPrice(
+                    comparison.product2.price
                   )}
                 </td>
 
@@ -847,12 +1364,16 @@ function App() {
 
                 <td>
                   ⭐{" "}
-                  {comparison.product1.rating.toFixed(1)}
+                  {formatNumber(
+                    comparison.product1.rating
+                  )}
                 </td>
 
                 <td>
                   ⭐{" "}
-                  {comparison.product2.rating.toFixed(1)}
+                  {formatNumber(
+                    comparison.product2.rating
+                  )}
                 </td>
 
               </tr>
@@ -903,15 +1424,15 @@ function App() {
                 </td>
 
                 <td>
-                  {Number(
+                  {formatNumber(
                     comparison.product1Score
-                  ).toFixed(2)}
+                  )}
                 </td>
 
                 <td>
-                  {Number(
+                  {formatNumber(
                     comparison.product2Score
-                  ).toFixed(2)}
+                  )}
                 </td>
 
               </tr>
@@ -933,16 +1454,16 @@ function App() {
 
             <p>
               Price Difference: ₹
-              {Number(
+              {formatPrice(
                 comparison.priceDifference
-              ).toLocaleString("en-IN")}
+              )}
             </p>
 
             <p>
               Rating Difference:{" "}
-              {Number(
+              {formatNumber(
                 comparison.ratingDifference
-              ).toFixed(2)}
+              )}
             </p>
 
 

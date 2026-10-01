@@ -19,6 +19,21 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@CrossOrigin(
+        origins = {
+                "http://localhost:5173",
+                "http://127.0.0.1:5173"
+        },
+        methods = {
+                RequestMethod.GET,
+                RequestMethod.POST,
+                RequestMethod.PUT,
+                RequestMethod.DELETE,
+                RequestMethod.OPTIONS
+        },
+        allowedHeaders = "*"
+)
+
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
@@ -28,6 +43,11 @@ public class ProductController {
     private final ProductRankingService productRankingService;
     private final ProductRecommendationService productRecommendationService;
     private final NaturalLanguageQueryService naturalLanguageQueryService;
+
+
+    // =========================================================
+    // CONSTRUCTOR
+    // =========================================================
 
     public ProductController(
             ProductService productService,
@@ -43,8 +63,9 @@ public class ProductController {
         this.naturalLanguageQueryService = naturalLanguageQueryService;
     }
 
+
     // =========================================================
-    // DAY 22 - VALIDATION ERROR HANDLER
+    // VALIDATION ERROR HANDLER
     // =========================================================
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -55,18 +76,28 @@ public class ProductController {
         return exception.getMessage();
     }
 
+
     // =========================================================
     // GET ALL PRODUCTS
     // =========================================================
 
     @GetMapping
     public List<Product> getAllProducts() {
+
         return productService.getAllProducts();
     }
+
+
+    // =========================================================
+    // GET AVAILABLE PRODUCTS
+    // =========================================================
+
     @GetMapping("/available")
-public List<Product> getAvailableProducts() {
-    return productService.getAvailableProducts();
-}
+    public List<Product> getAvailableProducts() {
+
+        return productService.getAvailableProducts();
+    }
+
 
     // =========================================================
     // SEARCH PRODUCTS
@@ -79,6 +110,7 @@ public List<Product> getAvailableProducts() {
         return productService.searchProducts(name);
     }
 
+
     // =========================================================
     // FILTER BY CATEGORY
     // =========================================================
@@ -89,6 +121,7 @@ public List<Product> getAvailableProducts() {
 
         return productService.filterByCategory(category);
     }
+
 
     // =========================================================
     // FILTER BY MAXIMUM PRICE
@@ -101,6 +134,7 @@ public List<Product> getAvailableProducts() {
         return productService.filterByMaxPrice(maxPrice);
     }
 
+
     // =========================================================
     // FILTER BY MINIMUM RATING
     // =========================================================
@@ -111,6 +145,7 @@ public List<Product> getAvailableProducts() {
 
         return productService.filterByMinRating(minRating);
     }
+
 
     // =========================================================
     // BASIC PRODUCT COMPARISON
@@ -123,6 +158,7 @@ public List<Product> getAvailableProducts() {
         return productService.compareProducts(ids);
     }
 
+
     // =========================================================
     // DETAILED PRODUCT COMPARISON
     // =========================================================
@@ -134,6 +170,7 @@ public List<Product> getAvailableProducts() {
         return productService.compareProductsDetailed(ids);
     }
 
+
     // =========================================================
     // PRODUCT SCORE
     // =========================================================
@@ -142,15 +179,19 @@ public List<Product> getAvailableProducts() {
     public double getProductScore(
             @PathVariable Long id) {
 
-        Product product = productService.getAllProducts()
+        Product product = productService
+                .getAllProducts()
                 .stream()
                 .filter(p -> p.getId().equals(id))
                 .findFirst()
                 .orElseThrow(() ->
-                        new RuntimeException("Product not found"));
+                        new RuntimeException(
+                                "Product not found"));
 
-        return productEvaluationService.calculateScore(product);
+        return productEvaluationService
+                .calculateScore(product);
     }
+
 
     // =========================================================
     // RANK ALL PRODUCTS
@@ -162,8 +203,10 @@ public List<Product> getAvailableProducts() {
         List<Product> products =
                 productService.getAllProducts();
 
-        return productRankingService.rankProducts(products);
+        return productRankingService
+                .rankProducts(products);
     }
+
 
     // =========================================================
     // RECOMMEND BEST PRODUCT
@@ -177,6 +220,7 @@ public List<Product> getAvailableProducts() {
                 .recommendBestProduct(request);
     }
 
+
     // =========================================================
     // TOP-N RECOMMENDATIONS
     // =========================================================
@@ -187,8 +231,11 @@ public List<Product> getAvailableProducts() {
             @RequestParam(defaultValue = "3") int limit) {
 
         return productRecommendationService
-                .recommendTopProducts(request, limit);
+                .recommendTopProducts(
+                        request,
+                        limit);
     }
+
 
     // =========================================================
     // PERSONALIZED RECOMMENDATION
@@ -202,6 +249,7 @@ public List<Product> getAvailableProducts() {
                 .recommendPersonalizedProduct(request);
     }
 
+
     // =========================================================
     // NATURAL LANGUAGE RECOMMENDATION
     // =========================================================
@@ -212,11 +260,14 @@ public List<Product> getAvailableProducts() {
 
         RecommendationRequest preferences =
                 naturalLanguageQueryService
-                        .parseQuery(request.getQuery());
+                        .parseQuery(
+                                request.getQuery());
 
         return productRecommendationService
-                .recommendBestProduct(preferences);
+                .recommendBestProduct(
+                        preferences);
     }
+
 
     // =========================================================
     // ADD PRODUCT
@@ -229,6 +280,7 @@ public List<Product> getAvailableProducts() {
         return productService.addProduct(product);
     }
 
+
     // =========================================================
     // UPDATE PRODUCT
     // =========================================================
@@ -238,6 +290,8 @@ public List<Product> getAvailableProducts() {
             @PathVariable Long id,
             @RequestBody Product product) {
 
-        return productService.updateProduct(id, product);
+        return productService.updateProduct(
+                id,
+                product);
     }
 }

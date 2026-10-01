@@ -18,6 +18,11 @@ public class ProductRecommendationService {
     private final ProductRankingService productRankingService;
     private final ProductEvaluationService productEvaluationService;
 
+
+    // =========================================================
+    // CONSTRUCTOR
+    // =========================================================
+
     public ProductRecommendationService(
             ProductService productService,
             ProductRankingService productRankingService,
@@ -27,6 +32,7 @@ public class ProductRecommendationService {
         this.productRankingService = productRankingService;
         this.productEvaluationService = productEvaluationService;
     }
+
 
     // =========================================================
     // RECOMMEND BEST PRODUCT
@@ -40,121 +46,64 @@ public class ProductRecommendationService {
         List<Product> products =
                 productService.getAllProducts();
 
-        List<Product> matchingProducts = products.stream()
-        .filter(product ->
-                product.getCategory().equalsIgnoreCase(
-                        request.getCategory()))
-        .filter(Product::isAvailable)
-        .filter(product ->
-                product.getPrice() <= request.getMaxPrice())
-        .filter(product ->
-                product.getRating() >= request.getMinRating())
-        .collect(Collectors.toList());
-                
 
         // =====================================================
-        // FALLBACK FOR NO EXACT MATCH
+        // FILTER PRODUCTS
         // =====================================================
+
+        List<Product> matchingProducts = products.stream()
+
+                // Category
+                .filter(product ->
+                        product.getCategory()
+                                .equalsIgnoreCase(
+                                        request.getCategory()))
+
+                // Availability
+                .filter(Product::isAvailable)
+
+                // Maximum price
+                .filter(product ->
+                        product.getPrice()
+                                <= request.getMaxPrice())
+
+                // Minimum rating
+                .filter(product ->
+                        product.getRating()
+                                >= request.getMinRating())
+
+                .collect(Collectors.toList());
+
+
+        // =====================================================
+        // NO EXACT MATCH
+        // =====================================================
+
+        /*
+         * IMPORTANT:
+         *
+         * Do not recommend a product outside the user's
+         * requested budget or rating.
+         *
+         * Example:
+         *
+         * User:
+         * "Laptop under 20000 with rating above 4"
+         *
+         * If no product satisfies those requirements,
+         * return an error instead of recommending a
+         * 99999 laptop.
+         */
 
         if (matchingProducts.isEmpty()) {
 
-            List<Product> alternatives =
-                    findAlternativeProducts(request);
-
-            if (alternatives.isEmpty()) {
-
-                throw new RuntimeException(
-                        "No products found for the requested category");
-            }
-
-            Product alternativeProduct =
-                    alternatives.get(0);
-
-            double score =
-                    productEvaluationService.calculateScore(
-                            alternativeProduct);
-
-            String reason =
-                    "No product matched all your preferences. "
-                    + "Showing the closest available alternative.";
-
-            String budgetMessage =
-                    "The recommended alternative costs ₹"
-                    + alternativeProduct.getPrice()
-                    + " compared with your maximum budget of ₹"
-                    + request.getMaxPrice();
-
-            String ratingMessage =
-                    "The alternative has a rating of "
-                    + alternativeProduct.getRating()
-                    + " compared with your minimum rating requirement of "
-                    + request.getMinRating();
-
-            String preferenceMessage;
-
-            if (request.getPriceWeight()
-                    > request.getRatingWeight()) {
-
-                preferenceMessage =
-                        "Recommendation gives higher importance "
-                        + "to your price preference";
-
-            } else if (request.getRatingWeight()
-                    > request.getPriceWeight()) {
-
-                preferenceMessage =
-                        "Recommendation gives higher importance "
-                        + "to your rating preference";
-
-            } else {
-
-                preferenceMessage =
-                        "Recommendation gives equal importance "
-                        + "to price and rating";
-            }
-
-            String brandMessage;
-
-            if (request.getPreferredBrand() != null
-                    && !request.getPreferredBrand().isBlank()) {
-
-                if (alternativeProduct.getBrand().equalsIgnoreCase(
-                        request.getPreferredBrand())) {
-
-                    brandMessage =
-                            "The recommended alternative matches "
-                            + "your preferred brand: "
-                            + request.getPreferredBrand();
-
-                } else {
-
-                    brandMessage =
-                            "The recommended alternative does not "
-                            + "match your preferred brand: "
-                            + request.getPreferredBrand();
-                }
-
-            } else {
-
-                brandMessage =
-                        "No specific brand preference was provided";
-            }
-
-            RecommendationExplanation explanation =
-                    new RecommendationExplanation(
-                            budgetMessage,
-                            ratingMessage,
-                            preferenceMessage,
-                            brandMessage
-                    );
-
-            return new RecommendationResponse(
-                    alternativeProduct,
-                    score,
-                    reason,
-                    explanation
+            throw new RuntimeException(
+                    "No products match your requirements. "
+                    + "Try increasing your budget or "
+                    + "changing your requirements."
             );
         }
+
 
         // =====================================================
         // RANK MATCHING PRODUCTS
@@ -162,8 +111,10 @@ public class ProductRecommendationService {
 
         List<Product> rankedProducts =
                 new java.util.ArrayList<>(
-                        productRankingService.rankProducts(
-                                matchingProducts));
+                        productRankingService
+                                .rankProducts(
+                                        matchingProducts));
+
 
         // =====================================================
         // PREFERRED BRAND
@@ -175,12 +126,14 @@ public class ProductRecommendationService {
             rankedProducts.sort((product1, product2) -> {
 
                 boolean product1Matches =
-                        product1.getBrand().equalsIgnoreCase(
-                                request.getPreferredBrand());
+                        product1.getBrand()
+                                .equalsIgnoreCase(
+                                        request.getPreferredBrand());
 
                 boolean product2Matches =
-                        product2.getBrand().equalsIgnoreCase(
-                                request.getPreferredBrand());
+                        product2.getBrand()
+                                .equalsIgnoreCase(
+                                        request.getPreferredBrand());
 
                 if (product1Matches && !product2Matches) {
                     return -1;
@@ -194,32 +147,61 @@ public class ProductRecommendationService {
             });
         }
 
+
+        // =====================================================
+        // SELECT BEST PRODUCT
+        // =====================================================
+
         Product recommendedProduct =
                 rankedProducts.get(0);
 
-        double score =
-                productEvaluationService.calculateScore(
-                        recommendedProduct);
-
-        String reason =
-                "Best product matching your category, budget, "
-                + "and minimum rating preferences";
 
         // =====================================================
-        // STRUCTURED EXPLANATION
+        // CALCULATE SCORE
+        // =====================================================
+
+        double score =
+                productEvaluationService
+                        .calculateScore(
+                                recommendedProduct);
+
+
+        // =====================================================
+        // RECOMMENDATION REASON
+        // =====================================================
+
+        String reason =
+                "Best product matching your category, "
+                + "budget, and minimum rating preferences";
+
+
+        // =====================================================
+        // BUDGET EXPLANATION
         // =====================================================
 
         String budgetMessage =
                 "Price ₹"
-                + recommendedProduct.getPrice()
+                + formatPrice(
+                        recommendedProduct.getPrice())
                 + " is within your maximum budget of ₹"
-                + request.getMaxPrice();
+                + formatPrice(
+                        request.getMaxPrice());
+
+
+        // =====================================================
+        // RATING EXPLANATION
+        // =====================================================
 
         String ratingMessage =
                 "Rating "
                 + recommendedProduct.getRating()
                 + " meets your minimum rating requirement of "
                 + request.getMinRating();
+
+
+        // =====================================================
+        // PREFERENCE EXPLANATION
+        // =====================================================
 
         String preferenceMessage;
 
@@ -244,6 +226,7 @@ public class ProductRecommendationService {
                     + "to price and rating";
         }
 
+
         // =====================================================
         // BRAND EXPLANATION
         // =====================================================
@@ -253,8 +236,9 @@ public class ProductRecommendationService {
         if (request.getPreferredBrand() != null
                 && !request.getPreferredBrand().isBlank()) {
 
-            if (recommendedProduct.getBrand().equalsIgnoreCase(
-                    request.getPreferredBrand())) {
+            if (recommendedProduct.getBrand()
+                    .equalsIgnoreCase(
+                            request.getPreferredBrand())) {
 
                 brandMessage =
                         "The recommended product matches "
@@ -274,6 +258,11 @@ public class ProductRecommendationService {
                     "No specific brand preference was provided";
         }
 
+
+        // =====================================================
+        // CREATE EXPLANATION
+        // =====================================================
+
         RecommendationExplanation explanation =
                 new RecommendationExplanation(
                         budgetMessage,
@@ -281,6 +270,11 @@ public class ProductRecommendationService {
                         preferenceMessage,
                         brandMessage
                 );
+
+
+        // =====================================================
+        // RETURN RECOMMENDATION
+        // =====================================================
 
         return new RecommendationResponse(
                 recommendedProduct,
@@ -290,47 +284,19 @@ public class ProductRecommendationService {
         );
     }
 
+
     // =========================================================
-    // FIND ALTERNATIVE PRODUCTS
+    // FORMAT PRICE
     // =========================================================
 
-    private List<Product> findAlternativeProducts(
-            RecommendationRequest request) {
+    private String formatPrice(double price) {
 
-        List<Product> products =
-                productService.getAllProducts();
-
-        return products.stream()
-                .filter(product ->
-                        product.getCategory().equalsIgnoreCase(
-                                request.getCategory()))
-                .sorted((product1, product2) -> {
-
-                    double difference1 =
-                            Math.abs(
-                                    product1.getPrice()
-                                    - request.getMaxPrice())
-                            + Math.abs(
-                                    product1.getRating()
-                                    - request.getMinRating())
-                            * 10000;
-
-                    double difference2 =
-                            Math.abs(
-                                    product2.getPrice()
-                                    - request.getMaxPrice())
-                            + Math.abs(
-                                    product2.getRating()
-                                    - request.getMinRating())
-                            * 10000;
-
-                    return Double.compare(
-                            difference1,
-                            difference2);
-                })
-                .limit(3)
-                .collect(Collectors.toList());
+        return String.format(
+                "%.0f",
+                price
+        );
     }
+
 
     // =========================================================
     // TOP-N PRODUCT RECOMMENDATIONS
@@ -342,53 +308,107 @@ public class ProductRecommendationService {
 
         request.validate();
 
+
+        // =====================================================
+        // VALIDATE LIMIT
+        // =====================================================
+
         if (limit <= 0) {
 
             throw new IllegalArgumentException(
-                    "Recommendation limit must be greater than 0");
+                    "Recommendation limit must be greater than 0"
+            );
         }
 
         if (limit > 10) {
 
             throw new IllegalArgumentException(
-                    "Recommendation limit cannot exceed 10");
+                    "Recommendation limit cannot exceed 10"
+            );
         }
+
+
+        // =====================================================
+        // GET PRODUCTS
+        // =====================================================
 
         List<Product> products =
                 productService.getAllProducts();
 
-        List<Product> matchingProducts = products.stream()
-                .filter(product ->
-                        product.getCategory().equalsIgnoreCase(
-                                request.getCategory()))
-                .filter(product ->
-                        product.getPrice() <= request.getMaxPrice())
-                .filter(product ->
-                        product.getRating() >= request.getMinRating())
-                .collect(Collectors.toList());
+
+        // =====================================================
+        // FILTER PRODUCTS
+        // =====================================================
+
+        List<Product> matchingProducts =
+                products.stream()
+
+                        // Category
+                        .filter(product ->
+                                product.getCategory()
+                                        .equalsIgnoreCase(
+                                                request.getCategory()))
+
+                        // Availability
+                        .filter(Product::isAvailable)
+
+                        // Budget
+                        .filter(product ->
+                                product.getPrice()
+                                        <= request.getMaxPrice())
+
+                        // Rating
+                        .filter(product ->
+                                product.getRating()
+                                        >= request.getMinRating())
+
+                        .collect(Collectors.toList());
+
+
+        // =====================================================
+        // NO MATCHING PRODUCTS
+        // =====================================================
 
         if (matchingProducts.isEmpty()) {
 
             throw new RuntimeException(
-                    "No products match the given preferences");
+                    "No products match your requirements. "
+                    + "Try increasing your budget or "
+                    + "changing your requirements."
+            );
         }
 
+
+        // =====================================================
+        // RANK PRODUCTS
+        // =====================================================
+
         List<Product> rankedProducts =
-                productRankingService.rankProducts(
-                        matchingProducts);
+                productRankingService
+                        .rankProducts(
+                                matchingProducts);
+
+
+        // =====================================================
+        // CREATE RECOMMENDATIONS
+        // =====================================================
 
         List<RecommendationResponse> recommendations =
                 rankedProducts.stream()
+
                         .limit(limit)
+
                         .map(product -> {
 
                             double score =
                                     productEvaluationService
-                                            .calculateScore(product);
+                                            .calculateScore(
+                                                    product);
 
                             String reason =
-                                    "Matches your category, budget, "
-                                    + "and minimum rating preferences";
+                                    "Matches your category, "
+                                    + "budget, and minimum "
+                                    + "rating preferences";
 
                             return new RecommendationResponse(
                                     product,
@@ -396,11 +416,19 @@ public class ProductRecommendationService {
                                     reason
                             );
                         })
+
                         .collect(Collectors.toList());
 
+
+        // =====================================================
+        // RETURN TOP-N
+        // =====================================================
+
         return new RecommendationListResponse(
-                recommendations);
+                recommendations
+        );
     }
+
 
     // =========================================================
     // PERSONALIZED PRODUCT RECOMMENDATION
@@ -411,34 +439,74 @@ public class ProductRecommendationService {
 
         request.validate();
 
+
+        // =====================================================
+        // GET PRODUCTS
+        // =====================================================
+
         List<Product> products =
                 productService.getAllProducts();
 
-        List<Product> matchingProducts = products.stream()
-                .filter(product ->
-                        product.getCategory().equalsIgnoreCase(
-                                request.getCategory()))
-                .filter(product ->
-                        product.getPrice() <= request.getMaxPrice())
-                .filter(product ->
-                        product.getRating() >= request.getMinRating())
-                .collect(Collectors.toList());
+
+        // =====================================================
+        // FILTER PRODUCTS
+        // =====================================================
+
+        List<Product> matchingProducts =
+                products.stream()
+
+                        // Category
+                        .filter(product ->
+                                product.getCategory()
+                                        .equalsIgnoreCase(
+                                                request.getCategory()))
+
+                        // Availability
+                        .filter(Product::isAvailable)
+
+                        // Maximum price
+                        .filter(product ->
+                                product.getPrice()
+                                        <= request.getMaxPrice())
+
+                        // Minimum rating
+                        .filter(product ->
+                                product.getRating()
+                                        >= request.getMinRating())
+
+                        .collect(Collectors.toList());
+
+
+        // =====================================================
+        // NO MATCHING PRODUCTS
+        // =====================================================
 
         if (matchingProducts.isEmpty()) {
 
             throw new RuntimeException(
-                    "No products match the given preferences");
+                    "No products match your requirements. "
+                    + "Try increasing your budget or "
+                    + "changing your requirements."
+            );
         }
 
+
         // =====================================================
-        // DAY 24 - USE PREFERENCE-AWARE RANKING SERVICE
+        // PREFERENCE-AWARE RANKING
         // =====================================================
 
         List<Product> rankedProducts =
-                productRankingService.rankProductsByPreference(
-                        matchingProducts,
-                        request.getPriceWeight(),
-                        request.getRatingWeight());
+                productRankingService
+                        .rankProductsByPreference(
+                                matchingProducts,
+                                request.getPriceWeight(),
+                                request.getRatingWeight()
+                        );
+
+
+        // =====================================================
+        // RETURN BEST PERSONALIZED PRODUCT
+        // =====================================================
 
         return rankedProducts.get(0);
     }
