@@ -14,7 +14,7 @@ function App() {
 
 
   // ============================================================
-  // RECOMMENDATION STATE
+  // SMART RECOMMENDATION STATE
   // ============================================================
 
   const [category, setCategory] = useState("");
@@ -29,6 +29,20 @@ function App() {
     useState(false);
 
   const [recommendationError, setRecommendationError] =
+    useState("");
+
+
+  // ============================================================
+  // TOP-N RECOMMENDATION STATE
+  // ============================================================
+
+  const [topRecommendations, setTopRecommendations] =
+    useState([]);
+
+  const [topRecommendationLoading, setTopRecommendationLoading] =
+    useState(false);
+
+  const [topRecommendationError, setTopRecommendationError] =
     useState("");
 
 
@@ -121,6 +135,42 @@ function App() {
 
 
   // ============================================================
+  // FORMAT PRICE
+  // ============================================================
+
+  const formatPrice = (price) => {
+
+    if (
+      price === null ||
+      price === undefined ||
+      Number.isNaN(Number(price))
+    ) {
+      return "-";
+    }
+
+    return Number(price).toLocaleString("en-IN");
+  };
+
+
+  // ============================================================
+  // FORMAT NUMBER
+  // ============================================================
+
+  const formatNumber = (value) => {
+
+    if (
+      value === null ||
+      value === undefined ||
+      Number.isNaN(Number(value))
+    ) {
+      return "-";
+    }
+
+    return Number(value).toFixed(2);
+  };
+
+
+  // ============================================================
   // SEARCH PRODUCTS
   // ============================================================
 
@@ -147,15 +197,20 @@ function App() {
         )}`
       );
 
+      const message =
+        await response.text();
+
       if (!response.ok) {
 
         throw new Error(
+          message ||
           "Failed to fetch products"
         );
 
       }
 
-      const data = await response.json();
+      const data =
+        JSON.parse(message);
 
       setProducts(data);
 
@@ -187,7 +242,7 @@ function App() {
 
 
   // ============================================================
-  // GET SMART RECOMMENDATION
+  // GET SINGLE SMART RECOMMENDATION
   // ============================================================
 
   const getRecommendation = async () => {
@@ -296,6 +351,149 @@ function App() {
 
 
   // ============================================================
+  // GET TOP 3 RECOMMENDATIONS
+  // ============================================================
+
+  const getTopRecommendations = async () => {
+
+    if (!category.trim()) {
+
+      setTopRecommendationError(
+        "Please enter a product category."
+      );
+
+      return;
+    }
+
+    if (!maxPrice) {
+
+      setTopRecommendationError(
+        "Please enter your maximum price."
+      );
+
+      return;
+    }
+
+    if (!minRating) {
+
+      setTopRecommendationError(
+        "Please enter your minimum rating."
+      );
+
+      return;
+    }
+
+    setTopRecommendationLoading(true);
+    setTopRecommendationError("");
+    setTopRecommendations([]);
+
+    try {
+
+      const response = await fetch(
+        "http://localhost:8080/api/products/recommend/top?limit=3",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+
+            category: category,
+
+            maxPrice: Number(maxPrice),
+
+            minRating: Number(minRating),
+
+            priceWeight: 0.4,
+
+            ratingWeight: 0.6,
+
+            preferredBrand:
+              preferredBrand.trim() || null,
+
+          }),
+        }
+      );
+
+      const message =
+        await response.text();
+
+      if (!response.ok) {
+
+        throw new Error(
+          message ||
+          "No matching products found."
+        );
+
+      }
+
+      const data =
+        JSON.parse(message);
+
+      console.log(
+        "Top recommendations API response:",
+        data
+      );
+
+
+      // ========================================================
+      // SUPPORT RECOMMENDATION LIST RESPONSE
+      // ========================================================
+
+      let recommendations = [];
+
+      if (
+        data &&
+        Array.isArray(data.recommendations)
+      ) {
+
+        recommendations =
+          data.recommendations;
+
+      } else if (Array.isArray(data)) {
+
+        recommendations = data;
+
+      }
+
+
+      if (recommendations.length === 0) {
+
+        setTopRecommendationError(
+          "No matching products found. Try increasing your budget or changing your requirements."
+        );
+
+        return;
+      }
+
+
+      setTopRecommendations(
+        recommendations
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Top recommendations error:",
+        error
+      );
+
+      setTopRecommendationError(
+        error.message ||
+        "Unable to get top recommendations."
+      );
+
+    } finally {
+
+      setTopRecommendationLoading(false);
+
+    }
+  };
+
+
+  // ============================================================
   // NATURAL LANGUAGE SHOPPING QUERY
   // ============================================================
 
@@ -335,10 +533,6 @@ function App() {
         const message =
           await response.text();
 
-        // ======================================================
-        // HANDLE API ERRORS
-        // ======================================================
-
         if (!response.ok) {
 
           if (response.status === 404) {
@@ -364,11 +558,6 @@ function App() {
           );
 
         }
-
-
-        // ======================================================
-        // PARSE SUCCESS RESPONSE
-        // ======================================================
 
         const data =
           JSON.parse(message);
@@ -398,6 +587,41 @@ function App() {
 
       }
     };
+
+
+  // ============================================================
+  // GET QUERY RECOMMENDED PRODUCT
+  // ============================================================
+
+  const getQueryProduct = () => {
+
+    if (!queryRecommendation) {
+      return null;
+    }
+
+    if (
+      queryRecommendation.recommendedProduct
+    ) {
+
+      return queryRecommendation
+        .recommendedProduct;
+
+    }
+
+    if (
+      queryRecommendation.product
+    ) {
+
+      return queryRecommendation.product;
+
+    }
+
+    return null;
+  };
+
+
+  const queryProduct =
+    getQueryProduct();
 
 
   // ============================================================
@@ -477,87 +701,6 @@ function App() {
 
 
   // ============================================================
-  // FORMAT PRICE
-  // ============================================================
-
-  const formatPrice = (price) => {
-
-    if (
-      price === null ||
-      price === undefined
-    ) {
-
-      return "-";
-
-    }
-
-    return Number(price)
-      .toLocaleString("en-IN");
-
-  };
-
-
-  // ============================================================
-  // FORMAT NUMBER
-  // ============================================================
-
-  const formatNumber = (value) => {
-
-    if (
-      value === null ||
-      value === undefined
-    ) {
-
-      return "-";
-
-    }
-
-    return Number(value)
-      .toFixed(2);
-
-  };
-
-
-  // ============================================================
-  // GET NATURAL LANGUAGE RECOMMENDED PRODUCT
-  // ============================================================
-
-  const getQueryProduct = () => {
-
-    if (!queryRecommendation) {
-
-      return null;
-
-    }
-
-    if (
-      queryRecommendation
-        .recommendedProduct
-    ) {
-
-      return queryRecommendation
-        .recommendedProduct;
-
-    }
-
-    if (
-      queryRecommendation.product
-    ) {
-
-      return queryRecommendation.product;
-
-    }
-
-    return null;
-
-  };
-
-
-  const queryProduct =
-    getQueryProduct();
-
-
-  // ============================================================
   // UI
   // ============================================================
 
@@ -607,20 +750,15 @@ function App() {
 
 
       {loading && (
-
         <p>
           Searching products...
         </p>
-
       )}
 
-
       {error && (
-
         <p>
           {error}
         </p>
-
       )}
 
 
@@ -714,29 +852,16 @@ function App() {
       </div>
 
 
-      {/* ======================================================
-          NATURAL LANGUAGE LOADING
-      ====================================================== */}
-
       {queryLoading && (
-
         <p>
           Understanding your requirements...
         </p>
-
       )}
 
-
-      {/* ======================================================
-          NATURAL LANGUAGE ERROR
-      ====================================================== */}
-
       {queryError && (
-
         <p>
           {queryError}
         </p>
-
       )}
 
 
@@ -752,7 +877,6 @@ function App() {
             AI Shopping Assistant
           </h2>
 
-
           <p>
             <strong>
               Your request:
@@ -763,8 +887,6 @@ function App() {
             "{naturalLanguageQuery}"
           </p>
 
-
-          {/* RECOMMENDED PRODUCT */}
 
           {queryProduct && (
 
@@ -810,8 +932,6 @@ function App() {
           )}
 
 
-          {/* SCORE */}
-
           {queryRecommendation.score !==
             undefined && (
 
@@ -827,8 +947,6 @@ function App() {
           )}
 
 
-          {/* REASON */}
-
           {queryRecommendation.reason && (
 
             <p>
@@ -839,13 +957,10 @@ function App() {
               <br />
 
               {queryRecommendation.reason}
-
             </p>
 
           )}
 
-
-          {/* EXPLANATION */}
 
           {queryRecommendation.explanation && (
 
@@ -865,7 +980,6 @@ function App() {
 
               )}
 
-
               {queryRecommendation
                 .explanation
                 .ratingMessage && (
@@ -880,7 +994,6 @@ function App() {
 
               )}
 
-
               {queryRecommendation
                 .explanation
                 .preferenceMessage && (
@@ -894,7 +1007,6 @@ function App() {
                 </p>
 
               )}
-
 
               {queryRecommendation
                 .explanation
@@ -985,34 +1097,21 @@ function App() {
       </div>
 
 
-      {/* ======================================================
-          MANUAL RECOMMENDATION LOADING
-      ====================================================== */}
-
       {recommendationLoading && (
-
         <p>
           Finding the best product...
         </p>
-
       )}
 
-
-      {/* ======================================================
-          MANUAL RECOMMENDATION ERROR
-      ====================================================== */}
-
       {recommendationError && (
-
         <p>
           {recommendationError}
         </p>
-
       )}
 
 
       {/* ======================================================
-          MANUAL RECOMMENDATION RESULT
+          SINGLE RECOMMENDATION RESULT
       ====================================================== */}
 
       {recommendation &&
@@ -1161,7 +1260,154 @@ function App() {
 
 
       {/* ======================================================
-          COMPARE PRODUCTS
+          TOP 3 RECOMMENDATIONS
+      ====================================================== */}
+
+      <div className="recommendation-section">
+
+        <h2>
+          Top 3 Recommendations
+        </h2>
+
+        <p>
+          Find the best matching products based
+          on your category, budget, rating, and
+          brand preference.
+        </p>
+
+        <button
+          onClick={getTopRecommendations}
+        >
+          Find Top 3 Products
+        </button>
+
+      </div>
+
+
+      {topRecommendationLoading && (
+
+        <p>
+          Finding the top 3 products...
+        </p>
+
+      )}
+
+
+      {topRecommendationError && (
+
+        <p>
+          {topRecommendationError}
+        </p>
+
+      )}
+
+
+      {topRecommendations.length > 0 && (
+
+        <div className="products">
+
+          {topRecommendations.map(
+            (item, index) => {
+
+              const product =
+                item.recommendedProduct ||
+                item.product ||
+                item;
+
+              const score =
+                item.score;
+
+              const reason =
+                item.reason;
+
+
+              return (
+
+                <div
+                  className="recommendation-card"
+                  key={
+                    product.id ||
+                    index
+                  }
+                >
+
+                  <h2>
+                    #{index + 1}
+                  </h2>
+
+                  <h3>
+                    {product.name}
+                  </h3>
+
+                  <p>
+                    Brand:{" "}
+                    {product.brand}
+                  </p>
+
+                  <p>
+                    Price: ₹
+                    {formatPrice(
+                      product.price
+                    )}
+                  </p>
+
+                  <p>
+                    Rating: ⭐{" "}
+                    {formatNumber(
+                      product.rating
+                    )}
+                  </p>
+
+                  <p>
+                    Category:{" "}
+                    {product.category}
+                  </p>
+
+                  <p>
+                    Availability:{" "}
+                    {product.available
+                      ? "Available"
+                      : "Out of Stock"}
+                  </p>
+
+
+                  {score !== undefined && (
+
+                    <p>
+                      Recommendation Score:{" "}
+                      <strong>
+                        {formatNumber(
+                          score
+                        )}
+                      </strong>
+                    </p>
+
+                  )}
+
+
+                  {reason && (
+
+                    <p>
+                      {reason}
+                    </p>
+
+                  )}
+
+                </div>
+
+              );
+
+            }
+
+          )}
+
+        </div>
+
+      )}
+
+
+      {/* ======================================================
+          PRODUCT COMPARISON
       ====================================================== */}
 
       <div className="recommendation-section">
@@ -1201,7 +1447,9 @@ function App() {
                   value={product.id}
                 >
                   {product.name} - ₹
-                  {formatPrice(product.price)}
+                  {formatPrice(
+                    product.price
+                  )}
                 </option>
 
               ))}
@@ -1229,7 +1477,9 @@ function App() {
                   value={product.id}
                 >
                   {product.name} - ₹
-                  {formatPrice(product.price)}
+                  {formatPrice(
+                    product.price
+                  )}
                 </option>
 
               ))}
@@ -1250,10 +1500,6 @@ function App() {
       </div>
 
 
-      {/* ======================================================
-          COMPARISON LOADING
-      ====================================================== */}
-
       {comparisonLoading && (
 
         <p>
@@ -1261,11 +1507,6 @@ function App() {
         </p>
 
       )}
-
-
-      {/* ======================================================
-          COMPARISON ERROR
-      ====================================================== */}
 
       {comparisonError && (
 
@@ -1441,10 +1682,6 @@ function App() {
 
           </table>
 
-
-          {/* ==================================================
-              COMPARISON INSIGHTS
-          ================================================== */}
 
           <div className="comparison-details">
 

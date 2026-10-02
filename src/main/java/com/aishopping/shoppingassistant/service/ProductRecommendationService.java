@@ -8,6 +8,7 @@ import com.aishopping.shoppingassistant.model.RecommendationListResponse;
 
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,49 +52,34 @@ public class ProductRecommendationService {
         // FILTER PRODUCTS
         // =====================================================
 
-        List<Product> matchingProducts = products.stream()
+        List<Product> matchingProducts =
+                products.stream()
 
-                // Category
-                .filter(product ->
-                        product.getCategory()
-                                .equalsIgnoreCase(
-                                        request.getCategory()))
+                        // Category
+                        .filter(product ->
+                                product.getCategory()
+                                        .equalsIgnoreCase(
+                                                request.getCategory()))
 
-                // Availability
-                .filter(Product::isAvailable)
+                        // Availability
+                        .filter(Product::isAvailable)
 
-                // Maximum price
-                .filter(product ->
-                        product.getPrice()
-                                <= request.getMaxPrice())
+                        // Maximum price
+                        .filter(product ->
+                                product.getPrice()
+                                        <= request.getMaxPrice())
 
-                // Minimum rating
-                .filter(product ->
-                        product.getRating()
-                                >= request.getMinRating())
+                        // Minimum rating
+                        .filter(product ->
+                                product.getRating()
+                                        >= request.getMinRating())
 
-                .collect(Collectors.toList());
+                        .collect(Collectors.toList());
 
 
         // =====================================================
-        // NO EXACT MATCH
+        // NO MATCHING PRODUCTS
         // =====================================================
-
-        /*
-         * IMPORTANT:
-         *
-         * Do not recommend a product outside the user's
-         * requested budget or rating.
-         *
-         * Example:
-         *
-         * User:
-         * "Laptop under 20000 with rating above 4"
-         *
-         * If no product satisfies those requirements,
-         * return an error instead of recommending a
-         * 99999 laptop.
-         */
 
         if (matchingProducts.isEmpty()) {
 
@@ -106,46 +92,25 @@ public class ProductRecommendationService {
 
 
         // =====================================================
-        // RANK MATCHING PRODUCTS
+        // RANK PRODUCTS
         // =====================================================
 
         List<Product> rankedProducts =
-                new java.util.ArrayList<>(
+                new ArrayList<>(
                         productRankingService
                                 .rankProducts(
-                                        matchingProducts));
+                                        matchingProducts)
+                );
 
 
         // =====================================================
-        // PREFERRED BRAND
+        // APPLY PREFERRED BRAND
         // =====================================================
 
-        if (request.getPreferredBrand() != null
-                && !request.getPreferredBrand().isBlank()) {
-
-            rankedProducts.sort((product1, product2) -> {
-
-                boolean product1Matches =
-                        product1.getBrand()
-                                .equalsIgnoreCase(
-                                        request.getPreferredBrand());
-
-                boolean product2Matches =
-                        product2.getBrand()
-                                .equalsIgnoreCase(
-                                        request.getPreferredBrand());
-
-                if (product1Matches && !product2Matches) {
-                    return -1;
-                }
-
-                if (!product1Matches && product2Matches) {
-                    return 1;
-                }
-
-                return 0;
-            });
-        }
+        applyPreferredBrandPriority(
+                rankedProducts,
+                request.getPreferredBrand()
+        );
 
 
         // =====================================================
@@ -273,7 +238,7 @@ public class ProductRecommendationService {
 
 
         // =====================================================
-        // RETURN RECOMMENDATION
+        // RETURN RESPONSE
         // =====================================================
 
         return new RecommendationResponse(
@@ -286,20 +251,7 @@ public class ProductRecommendationService {
 
 
     // =========================================================
-    // FORMAT PRICE
-    // =========================================================
-
-    private String formatPrice(double price) {
-
-        return String.format(
-                "%.0f",
-                price
-        );
-    }
-
-
-    // =========================================================
-    // TOP-N PRODUCT RECOMMENDATIONS
+    // TOP-N RECOMMENDATIONS
     // =========================================================
 
     public RecommendationListResponse recommendTopProducts(
@@ -352,12 +304,12 @@ public class ProductRecommendationService {
                         // Availability
                         .filter(Product::isAvailable)
 
-                        // Budget
+                        // Maximum price
                         .filter(product ->
                                 product.getPrice()
                                         <= request.getMaxPrice())
 
-                        // Rating
+                        // Minimum rating
                         .filter(product ->
                                 product.getRating()
                                         >= request.getMinRating())
@@ -384,13 +336,38 @@ public class ProductRecommendationService {
         // =====================================================
 
         List<Product> rankedProducts =
-                productRankingService
-                        .rankProducts(
-                                matchingProducts);
+                new ArrayList<>(
+                        productRankingService
+                                .rankProducts(
+                                        matchingProducts)
+                );
 
 
         // =====================================================
-        // CREATE RECOMMENDATIONS
+        // APPLY PREFERRED BRAND PRIORITY
+        // =====================================================
+
+        /*
+         * If the user selected a preferred brand,
+         * products from that brand are moved ahead
+         * of other matching brands.
+         *
+         * Example:
+         *
+         * Preferred brand = Apple
+         *
+         * Apple products will receive priority
+         * in the Top-N ordering.
+         */
+
+        applyPreferredBrandPriority(
+                rankedProducts,
+                request.getPreferredBrand()
+        );
+
+
+        // =====================================================
+        // CREATE TOP-N RECOMMENDATIONS
         // =====================================================
 
         List<RecommendationResponse> recommendations =
@@ -405,10 +382,29 @@ public class ProductRecommendationService {
                                             .calculateScore(
                                                     product);
 
-                            String reason =
-                                    "Matches your category, "
-                                    + "budget, and minimum "
-                                    + "rating preferences";
+                            String reason;
+
+                            if (request.getPreferredBrand() != null
+                                    && !request
+                                    .getPreferredBrand()
+                                    .isBlank()
+                                    && product.getBrand()
+                                    .equalsIgnoreCase(
+                                            request
+                                            .getPreferredBrand())) {
+
+                                reason =
+                                        "Matches your category, "
+                                        + "budget, minimum rating, "
+                                        + "and preferred brand";
+
+                            } else {
+
+                                reason =
+                                        "Matches your category, "
+                                        + "budget, and minimum "
+                                        + "rating preferences";
+                            }
 
                             return new RecommendationResponse(
                                     product,
@@ -431,7 +427,7 @@ public class ProductRecommendationService {
 
 
     // =========================================================
-    // PERSONALIZED PRODUCT RECOMMENDATION
+    // PERSONALIZED RECOMMENDATION
     // =========================================================
 
     public Product recommendPersonalizedProduct(
@@ -492,22 +488,97 @@ public class ProductRecommendationService {
 
 
         // =====================================================
-        // PREFERENCE-AWARE RANKING
+        // PERSONALIZED RANKING
         // =====================================================
 
         List<Product> rankedProducts =
-                productRankingService
-                        .rankProductsByPreference(
-                                matchingProducts,
-                                request.getPriceWeight(),
-                                request.getRatingWeight()
-                        );
+                new ArrayList<>(
+                        productRankingService
+                                .rankProductsByPreference(
+                                        matchingProducts,
+                                        request.getPriceWeight(),
+                                        request.getRatingWeight()
+                                )
+                );
 
 
         // =====================================================
-        // RETURN BEST PERSONALIZED PRODUCT
+        // APPLY PREFERRED BRAND PRIORITY
+        // =====================================================
+
+        applyPreferredBrandPriority(
+                rankedProducts,
+                request.getPreferredBrand()
+        );
+
+
+        // =====================================================
+        // RETURN BEST PRODUCT
         // =====================================================
 
         return rankedProducts.get(0);
+    }
+
+
+    // =========================================================
+    // PREFERRED BRAND PRIORITY
+    // =========================================================
+
+    private void applyPreferredBrandPriority(
+            List<Product> products,
+            String preferredBrand) {
+
+        if (preferredBrand == null
+                || preferredBrand.isBlank()) {
+
+            return;
+        }
+
+
+        products.sort((product1, product2) -> {
+
+            boolean product1Matches =
+                    product1.getBrand()
+                            .equalsIgnoreCase(
+                                    preferredBrand);
+
+            boolean product2Matches =
+                    product2.getBrand()
+                            .equalsIgnoreCase(
+                                    preferredBrand);
+
+
+            // Product 1 is preferred brand
+            if (product1Matches
+                    && !product2Matches) {
+
+                return -1;
+            }
+
+
+            // Product 2 is preferred brand
+            if (!product1Matches
+                    && product2Matches) {
+
+                return 1;
+            }
+
+
+            // Same brand preference status
+            return 0;
+        });
+    }
+
+
+    // =========================================================
+    // FORMAT PRICE
+    // =========================================================
+
+    private String formatPrice(double price) {
+
+        return String.format(
+                "%.0f",
+                price
+        );
     }
 }
