@@ -2,15 +2,12 @@ package com.aishopping.shoppingassistant.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-    // =========================================================
-    // ILLEGAL ARGUMENT EXCEPTIONS
-    // =========================================================
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleIllegalArgumentException(
@@ -21,22 +18,26 @@ public class GlobalExceptionHandler {
                 .body(exception.getMessage());
     }
 
-    // =========================================================
-    // PRODUCT NOT FOUND / GENERAL RUNTIME ERRORS
-    // =========================================================
+    @ExceptionHandler(HttpMessageConversionException.class)
+    public ResponseEntity<String> handleMessageConversionException(
+            HttpMessageConversionException exception) {
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(
+                        "Message conversion error: "
+                        + exception.getMessage()
+                );
+    }
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<String> handleRuntimeException(
             RuntimeException exception) {
 
         return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(exception.getMessage());
     }
-
-    // =========================================================
-    // UNEXPECTED ERRORS
-    // =========================================================
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleGeneralException(
@@ -44,6 +45,9 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("An unexpected error occurred");
+                .body(
+                        "Unexpected error: "
+                        + exception.getMessage()
+                );
     }
 }
