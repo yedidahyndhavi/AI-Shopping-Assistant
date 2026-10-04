@@ -305,4 +305,16 @@ public java.util.Map<String, Object> addSpecification(
                 id,
                 product);
     }
+    @PostMapping("/{productId}/specifications/bulk")
+public String addOrUpdateSpecifications(
+        @PathVariable Long productId,
+        @RequestBody List<ProductSpecification> specifications) {
+
+    productSpecificationService
+            .addOrUpdateSpecifications(
+                    productId,
+                    specifications);
+
+    return "Specifications added/updated successfully";
+}
 }

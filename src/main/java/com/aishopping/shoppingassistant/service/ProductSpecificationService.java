@@ -8,6 +8,7 @@ import com.aishopping.shoppingassistant.repository.ProductSpecificationRepositor
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ProductSpecificationService {
@@ -98,4 +99,49 @@ public class ProductSpecificationService {
         productSpecificationRepository.delete(
                 specification);
     }
+    public void addOrUpdateSpecifications(
+        Long productId,
+        List<ProductSpecification> specifications) {
+
+    Product product =
+            productRepository.findById(productId)
+                    .orElseThrow(() ->
+                            new RuntimeException(
+                                    "Product not found"));
+
+    for (ProductSpecification incoming : specifications) {
+
+        ProductSpecification existing =
+                productSpecificationRepository
+                        .findByProductId(productId)
+                        .stream()
+                        .filter(spec ->
+                                spec.getSpecificationName()
+                                        .equalsIgnoreCase(
+                                                incoming.getSpecificationName()))
+                        .findFirst()
+                        .orElse(null);
+
+        if (existing != null) {
+
+            existing.setSpecificationValue(
+                    incoming.getSpecificationValue());
+
+            existing.setUnit(
+                    incoming.getUnit());
+
+            existing.setNumericValue(
+                    incoming.getNumericValue());
+
+            productSpecificationRepository.save(existing);
+
+        } else {
+
+            incoming.setProduct(product);
+
+            productSpecificationRepository.save(
+                    incoming);
+        }
+    }
+}
 }
