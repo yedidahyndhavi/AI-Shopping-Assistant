@@ -1,5 +1,8 @@
 package com.aishopping.shoppingassistant.model;
 
+import java.util.List;
+import java.util.Map;
+
 public class ProductComparisonResponse {
 
     private Product product1;
@@ -16,11 +19,30 @@ public class ProductComparisonResponse {
 
     private String comparisonSummary;
 
-    // Default constructor
+    /*
+     * Specification-by-specification comparison.
+     *
+     * Each item can contain:
+     * specification
+     * product1Value
+     * product2Value
+     * winner
+     */
+    private List<Map<String, Object>> specificationComparisons;
+
+
+    // ============================================================
+    // Default Constructor
+    // ============================================================
+
     public ProductComparisonResponse() {
     }
 
-    // Constructor for basic detailed comparison
+
+    // ============================================================
+    // Constructor for Basic Detailed Comparison
+    // ============================================================
+
     public ProductComparisonResponse(
             Product product1,
             Product product2,
@@ -37,7 +59,11 @@ public class ProductComparisonResponse {
         this.higherRatedProduct = higherRatedProduct;
     }
 
-    // Constructor for complete detailed comparison
+
+    // ============================================================
+    // Constructor for Complete Detailed Comparison
+    // ============================================================
+
     public ProductComparisonResponse(
             Product product1,
             Product product2,
@@ -60,6 +86,11 @@ public class ProductComparisonResponse {
         this.comparisonSummary = comparisonSummary;
     }
 
+
+    // ============================================================
+    // Product 1
+    // ============================================================
+
     public Product getProduct1() {
         return product1;
     }
@@ -67,6 +98,11 @@ public class ProductComparisonResponse {
     public void setProduct1(Product product1) {
         this.product1 = product1;
     }
+
+
+    // ============================================================
+    // Product 2
+    // ============================================================
 
     public Product getProduct2() {
         return product2;
@@ -76,6 +112,11 @@ public class ProductComparisonResponse {
         this.product2 = product2;
     }
 
+
+    // ============================================================
+    // Price Difference
+    // ============================================================
+
     public double getPriceDifference() {
         return priceDifference;
     }
@@ -83,6 +124,11 @@ public class ProductComparisonResponse {
     public void setPriceDifference(double priceDifference) {
         this.priceDifference = priceDifference;
     }
+
+
+    // ============================================================
+    // Cheaper Product
+    // ============================================================
 
     public Product getCheaperProduct() {
         return cheaperProduct;
@@ -92,6 +138,11 @@ public class ProductComparisonResponse {
         this.cheaperProduct = cheaperProduct;
     }
 
+
+    // ============================================================
+    // Rating Difference
+    // ============================================================
+
     public double getRatingDifference() {
         return ratingDifference;
     }
@@ -99,6 +150,11 @@ public class ProductComparisonResponse {
     public void setRatingDifference(double ratingDifference) {
         this.ratingDifference = ratingDifference;
     }
+
+
+    // ============================================================
+    // Higher Rated Product
+    // ============================================================
 
     public Product getHigherRatedProduct() {
         return higherRatedProduct;
@@ -108,6 +164,11 @@ public class ProductComparisonResponse {
         this.higherRatedProduct = higherRatedProduct;
     }
 
+
+    // ============================================================
+    // Product 1 Score
+    // ============================================================
+
     public double getProduct1Score() {
         return product1Score;
     }
@@ -115,6 +176,11 @@ public class ProductComparisonResponse {
     public void setProduct1Score(double product1Score) {
         this.product1Score = product1Score;
     }
+
+
+    // ============================================================
+    // Product 2 Score
+    // ============================================================
 
     public double getProduct2Score() {
         return product2Score;
@@ -124,11 +190,32 @@ public class ProductComparisonResponse {
         this.product2Score = product2Score;
     }
 
+
+    // ============================================================
+    // Comparison Summary
+    // ============================================================
+
     public String getComparisonSummary() {
         return comparisonSummary;
     }
 
     public void setComparisonSummary(String comparisonSummary) {
         this.comparisonSummary = comparisonSummary;
+    }
+
+
+    // ============================================================
+    // Specification Comparisons
+    // ============================================================
+
+    public List<Map<String, Object>> getSpecificationComparisons() {
+        return specificationComparisons;
+    }
+
+    public void setSpecificationComparisons(
+            List<Map<String, Object>> specificationComparisons) {
+
+        this.specificationComparisons =
+                specificationComparisons;
     }
 }
