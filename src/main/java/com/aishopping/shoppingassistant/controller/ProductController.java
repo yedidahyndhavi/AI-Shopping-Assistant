@@ -42,25 +42,16 @@ public class ProductController {
 
     private final ProductService productService;
 
-    private final ProductEvaluationService
-            productEvaluationService;
+    private final ProductEvaluationService productEvaluationService;
 
-    private final ProductRankingService
-            productRankingService;
+    private final ProductRankingService productRankingService;
 
-    private final ProductRecommendationService
-            productRecommendationService;
+    private final ProductRecommendationService productRecommendationService;
 
-    private final NaturalLanguageQueryService
-            naturalLanguageQueryService;
+    private final NaturalLanguageQueryService naturalLanguageQueryService;
 
-    private final ProductSpecificationService
-            productSpecificationService;
+    private final ProductSpecificationService productSpecificationService;
 
-
-    // ============================================================
-    // CONSTRUCTOR
-    // ============================================================
 
     public ProductController(
             ProductService productService,
@@ -70,29 +61,19 @@ public class ProductController {
             NaturalLanguageQueryService naturalLanguageQueryService,
             ProductSpecificationService productSpecificationService) {
 
-        this.productService =
-                productService;
+        this.productService = productService;
 
-        this.productEvaluationService =
-                productEvaluationService;
+        this.productEvaluationService = productEvaluationService;
 
-        this.productRankingService =
-                productRankingService;
+        this.productRankingService = productRankingService;
 
-        this.productRecommendationService =
-                productRecommendationService;
+        this.productRecommendationService = productRecommendationService;
 
-        this.naturalLanguageQueryService =
-                naturalLanguageQueryService;
+        this.naturalLanguageQueryService = naturalLanguageQueryService;
 
-        this.productSpecificationService =
-                productSpecificationService;
+        this.productSpecificationService = productSpecificationService;
     }
 
-
-    // ============================================================
-    // EXCEPTION HANDLING
-    // ============================================================
 
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -103,11 +84,10 @@ public class ProductController {
     }
 
 
-    // ============================================================
+    // =========================================================
     // PRODUCT ENDPOINTS
-    // ============================================================
+    // =========================================================
 
-    // Get all products
     @GetMapping
     public List<Product> getAllProducts() {
 
@@ -115,7 +95,6 @@ public class ProductController {
     }
 
 
-    // Get only available products
     @GetMapping("/available")
     public List<Product> getAvailableProducts() {
 
@@ -123,7 +102,6 @@ public class ProductController {
     }
 
 
-    // Search products by name
     @GetMapping("/search")
     public List<Product> searchProducts(
             @RequestParam String name) {
@@ -132,7 +110,6 @@ public class ProductController {
     }
 
 
-    // Filter products by category
     @GetMapping("/filter/category")
     public List<Product> filterByCategory(
             @RequestParam String category) {
@@ -141,7 +118,6 @@ public class ProductController {
     }
 
 
-    // Filter products by maximum price
     @GetMapping("/filter/price")
     public List<Product> filterByMaxPrice(
             @RequestParam double maxPrice) {
@@ -150,7 +126,6 @@ public class ProductController {
     }
 
 
-    // Filter products by minimum rating
     @GetMapping("/filter/rating")
     public List<Product> filterByMinRating(
             @RequestParam double minRating) {
@@ -159,11 +134,10 @@ public class ProductController {
     }
 
 
-    // ============================================================
+    // =========================================================
     // PRODUCT COMPARISON
-    // ============================================================
+    // =========================================================
 
-    // Basic comparison
     @GetMapping("/compare")
     public ProductComparison compareProducts(
             @RequestParam List<Long> ids) {
@@ -172,7 +146,6 @@ public class ProductController {
     }
 
 
-    // Detailed specification-aware comparison
     @GetMapping("/compare/detailed")
     public ProductComparisonResponse compareProductsDetailed(
             @RequestParam List<Long> ids) {
@@ -181,34 +154,31 @@ public class ProductController {
     }
 
 
-    // ============================================================
+    // =========================================================
     // PRODUCT SCORE
-    // ============================================================
+    // =========================================================
 
     @GetMapping("/{id}/score")
     public double getProductScore(
             @PathVariable Long id) {
 
-        Product product =
-                productService
-                        .getAllProducts()
-                        .stream()
-                        .filter(productItem ->
-                                productItem.getId()
-                                        .equals(id))
-                        .findFirst()
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Product not found"));
+        Product product = productService
+                .getAllProducts()
+                .stream()
+                .filter(p -> p.getId().equals(id))
+                .findFirst()
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Product not found"));
 
         return productEvaluationService
                 .calculateScore(product);
     }
 
 
-    // ============================================================
+    // =========================================================
     // PRODUCT RANKING
-    // ============================================================
+    // =========================================================
 
     @GetMapping("/rank")
     public List<Product> rankProducts() {
@@ -221,11 +191,10 @@ public class ProductController {
     }
 
 
-    // ============================================================
+    // =========================================================
     // RECOMMENDATION ENDPOINTS
-    // ============================================================
+    // =========================================================
 
-    // Recommend best product using RecommendationRequest
     @PostMapping("/recommend")
     public RecommendationResponse recommendBestProduct(
             @RequestBody RecommendationRequest request) {
@@ -235,7 +204,6 @@ public class ProductController {
     }
 
 
-    // Recommend top products using RecommendationRequest
     @PostMapping("/recommend/top")
     public RecommendationListResponse recommendTopProducts(
             @RequestBody RecommendationRequest request,
@@ -248,7 +216,6 @@ public class ProductController {
     }
 
 
-    // Personalized recommendation
     @PostMapping("/recommend/personalized")
     public Product recommendPersonalizedProduct(
             @RequestBody RecommendationRequest request) {
@@ -258,32 +225,18 @@ public class ProductController {
     }
 
 
-    // ============================================================
-    // DAY 37
-    // NATURAL LANGUAGE RECOMMENDATION
-    // ============================================================
+    // =========================================================
+    // DAY 37 - NATURAL LANGUAGE BEST RECOMMENDATION
+    // =========================================================
 
     @PostMapping("/recommend/query")
     public RecommendationResponse recommendFromQuery(
             @RequestBody NaturalLanguageQueryRequest request) {
 
-        /*
-         * Step 1:
-         * Convert the user's natural-language query
-         * into structured requirements.
-         */
-
         ProductRequirement requirement =
                 naturalLanguageQueryService
                         .parseRequirements(
                                 request.getQuery());
-
-
-        /*
-         * Step 2:
-         * Use the structured requirements to filter
-         * and rank actual products.
-         */
 
         return productRecommendationService
                 .recommendBestProduct(
@@ -291,26 +244,30 @@ public class ProductController {
     }
 
 
-    // ============================================================
-    // DAY 37
-    // REQUIREMENT EXTRACTION TEST ENDPOINT
-    // ============================================================
+    // =========================================================
+    // DAY 38 - NATURAL LANGUAGE TOP 3 RECOMMENDATIONS
+    // =========================================================
 
-    @PostMapping("/requirements")
-    public ProductRequirement extractProductRequirements(
+    @PostMapping("/recommend/query/top")
+    public RecommendationListResponse recommendTopFromQuery(
             @RequestBody NaturalLanguageQueryRequest request) {
 
-        return naturalLanguageQueryService
-                .parseRequirements(
-                        request.getQuery());
+        ProductRequirement requirement =
+                naturalLanguageQueryService
+                        .parseRequirements(
+                                request.getQuery());
+
+        return productRecommendationService
+                .recommendTopProducts(
+                        requirement,
+                        3);
     }
 
 
-    // ============================================================
+    // =========================================================
     // PRODUCT SPECIFICATION ENDPOINTS
-    // ============================================================
+    // =========================================================
 
-    // Add specification to product
     @PostMapping("/{productId}/specifications")
     public java.util.Map<String, Object> addSpecification(
             @PathVariable Long productId,
@@ -331,13 +288,11 @@ public class ProductController {
 
         response.put(
                 "specificationName",
-                savedSpecification
-                        .getSpecificationName());
+                savedSpecification.getSpecificationName());
 
         response.put(
                 "specificationValue",
-                savedSpecification
-                        .getSpecificationValue());
+                savedSpecification.getSpecificationValue());
 
         response.put(
                 "unit",
@@ -345,24 +300,22 @@ public class ProductController {
 
         response.put(
                 "numericValue",
-                savedSpecification
-                        .getNumericValue());
+                savedSpecification.getNumericValue());
 
         return response;
     }
 
 
-    // Get specifications for a product
     @GetMapping("/{productId}/specifications")
     public List<ProductSpecification> getSpecifications(
             @PathVariable Long productId) {
 
         return productSpecificationService
-                .getSpecifications(productId);
+                .getSpecifications(
+                        productId);
     }
 
 
-    // Get specification by ID
     @GetMapping("/specifications/{specificationId}")
     public ProductSpecification getSpecification(
             @PathVariable Long specificationId) {
@@ -373,7 +326,6 @@ public class ProductController {
     }
 
 
-    // Update specification
     @PutMapping("/specifications/{specificationId}")
     public ProductSpecification updateSpecification(
             @PathVariable Long specificationId,
@@ -386,7 +338,6 @@ public class ProductController {
     }
 
 
-    // Delete specification
     @DeleteMapping("/specifications/{specificationId}")
     public String deleteSpecification(
             @PathVariable Long specificationId) {
@@ -399,11 +350,10 @@ public class ProductController {
     }
 
 
-    // ============================================================
+    // =========================================================
     // ADD / UPDATE PRODUCTS
-    // ============================================================
+    // =========================================================
 
-    // Add product
     @PostMapping
     public Product addProduct(
             @RequestBody Product product) {
@@ -412,7 +362,6 @@ public class ProductController {
     }
 
 
-    // Update product
     @PutMapping("/{id}")
     public Product updateProduct(
             @PathVariable Long id,
@@ -424,9 +373,9 @@ public class ProductController {
     }
 
 
-    // ============================================================
+    // =========================================================
     // BULK SPECIFICATION UPDATE
-    // ============================================================
+    // =========================================================
 
     @PostMapping("/{productId}/specifications/bulk")
     public String addOrUpdateSpecifications(
@@ -440,4 +389,5 @@ public class ProductController {
 
         return "Specifications added/updated successfully";
     }
+
 }
