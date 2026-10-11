@@ -1,41 +1,43 @@
+
 package com.aishopping.shoppingassistant.model;
 
 public class ProductRequirement {
 
     private String category;
-
     private Double maxPrice;
-
     private Double minRating;
 
+    // Smartphone requirements
     private Double minRam;
-
     private Double minStorage;
-
     private Double minCamera;
-
     private Double minBattery;
-
     private Double minDisplaySize;
-
     private Double minRefreshRate;
-
     private Boolean requires5G;
 
+    // Laptop requirement
+    private String preferredProcessor;
+
+    // Smart TV requirements
+    private String requiredResolution;
+    private String preferredDisplayTechnology;
+
+    // Headphones requirements
+    private Boolean requiresNoiseCancellation;
+    private Double minBatteryLife;
+    private Double maxWeight;
+
+    // Smartwatch requirements
+    private Double minWaterResistance;
+    private String requiredWaterResistance;
+    private String preferredCompatibility;
+
+    // Shared preference
     private String preferredBrand;
-
-
-    // ============================================================
-    // Default Constructor
-    // ============================================================
 
     public ProductRequirement() {
     }
-
-
-    // ============================================================
-    // Category
-    // ============================================================
 
     public String getCategory() {
         return category;
@@ -45,11 +47,6 @@ public class ProductRequirement {
         this.category = category;
     }
 
-
-    // ============================================================
-    // Maximum Price
-    // ============================================================
-
     public Double getMaxPrice() {
         return maxPrice;
     }
@@ -57,11 +54,6 @@ public class ProductRequirement {
     public void setMaxPrice(Double maxPrice) {
         this.maxPrice = maxPrice;
     }
-
-
-    // ============================================================
-    // Minimum Rating
-    // ============================================================
 
     public Double getMinRating() {
         return minRating;
@@ -71,11 +63,6 @@ public class ProductRequirement {
         this.minRating = minRating;
     }
 
-
-    // ============================================================
-    // Minimum RAM
-    // ============================================================
-
     public Double getMinRam() {
         return minRam;
     }
@@ -83,11 +70,6 @@ public class ProductRequirement {
     public void setMinRam(Double minRam) {
         this.minRam = minRam;
     }
-
-
-    // ============================================================
-    // Minimum Storage
-    // ============================================================
 
     public Double getMinStorage() {
         return minStorage;
@@ -97,11 +79,6 @@ public class ProductRequirement {
         this.minStorage = minStorage;
     }
 
-
-    // ============================================================
-    // Minimum Camera
-    // ============================================================
-
     public Double getMinCamera() {
         return minCamera;
     }
@@ -109,11 +86,6 @@ public class ProductRequirement {
     public void setMinCamera(Double minCamera) {
         this.minCamera = minCamera;
     }
-
-
-    // ============================================================
-    // Minimum Battery
-    // ============================================================
 
     public Double getMinBattery() {
         return minBattery;
@@ -123,11 +95,6 @@ public class ProductRequirement {
         this.minBattery = minBattery;
     }
 
-
-    // ============================================================
-    // Minimum Display Size
-    // ============================================================
-
     public Double getMinDisplaySize() {
         return minDisplaySize;
     }
@@ -135,11 +102,6 @@ public class ProductRequirement {
     public void setMinDisplaySize(Double minDisplaySize) {
         this.minDisplaySize = minDisplaySize;
     }
-
-
-    // ============================================================
-    // Minimum Refresh Rate
-    // ============================================================
 
     public Double getMinRefreshRate() {
         return minRefreshRate;
@@ -149,11 +111,6 @@ public class ProductRequirement {
         this.minRefreshRate = minRefreshRate;
     }
 
-
-    // ============================================================
-    // 5G Requirement
-    // ============================================================
-
     public Boolean getRequires5G() {
         return requires5G;
     }
@@ -162,10 +119,80 @@ public class ProductRequirement {
         this.requires5G = requires5G;
     }
 
+    public String getPreferredProcessor() {
+        return preferredProcessor;
+    }
 
-    // ============================================================
-    // Preferred Brand
-    // ============================================================
+    public void setPreferredProcessor(String preferredProcessor) {
+        this.preferredProcessor = preferredProcessor;
+    }
+
+    public String getRequiredResolution() {
+        return requiredResolution;
+    }
+
+    public void setRequiredResolution(String requiredResolution) {
+        this.requiredResolution = requiredResolution;
+    }
+
+    public String getPreferredDisplayTechnology() {
+        return preferredDisplayTechnology;
+    }
+
+    public void setPreferredDisplayTechnology(
+            String preferredDisplayTechnology) {
+        this.preferredDisplayTechnology = preferredDisplayTechnology;
+    }
+
+    public Boolean getRequiresNoiseCancellation() {
+        return requiresNoiseCancellation;
+    }
+
+    public void setRequiresNoiseCancellation(
+            Boolean requiresNoiseCancellation) {
+        this.requiresNoiseCancellation = requiresNoiseCancellation;
+    }
+
+    public Double getMinBatteryLife() {
+        return minBatteryLife;
+    }
+
+    public void setMinBatteryLife(Double minBatteryLife) {
+        this.minBatteryLife = minBatteryLife;
+    }
+
+    public Double getMaxWeight() {
+        return maxWeight;
+    }
+
+    public void setMaxWeight(Double maxWeight) {
+        this.maxWeight = maxWeight;
+    }
+
+    public Double getMinWaterResistance() {
+        return minWaterResistance;
+    }
+
+    public void setMinWaterResistance(Double minWaterResistance) {
+        this.minWaterResistance = minWaterResistance;
+    }
+
+    public String getRequiredWaterResistance() {
+        return requiredWaterResistance;
+    }
+
+    public void setRequiredWaterResistance(
+            String requiredWaterResistance) {
+        this.requiredWaterResistance = requiredWaterResistance;
+    }
+
+    public String getPreferredCompatibility() {
+        return preferredCompatibility;
+    }
+
+    public void setPreferredCompatibility(String preferredCompatibility) {
+        this.preferredCompatibility = preferredCompatibility;
+    }
 
     public String getPreferredBrand() {
         return preferredBrand;

@@ -1,10 +1,11 @@
+
 package com.aishopping.shoppingassistant.service;
 
 import com.aishopping.shoppingassistant.model.ProductRequirement;
 import com.aishopping.shoppingassistant.model.RecommendationRequest;
-
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -12,464 +13,515 @@ import java.util.regex.Pattern;
 public class NaturalLanguageQueryService {
 
     // ============================================================
-    // Existing query parser
+    // EXISTING QUERY PARSER
     // ============================================================
 
     public RecommendationRequest parseQuery(String query) {
-
-        String category =
-                extractCategory(query);
-
-        double maxPrice =
-                extractMaxPrice(query);
-
-        double minRating =
-                extractMinRating(query);
+        String text = safeQuery(query);
 
         return new RecommendationRequest(
-                category,
-                maxPrice,
-                minRating
+                extractCategory(text),
+                extractMaxPrice(text),
+                extractMinRating(text)
         );
     }
 
-
     // ============================================================
-    // Structured requirement parser
+    // STRUCTURED REQUIREMENT PARSER
     // ============================================================
 
-    public ProductRequirement parseRequirements(
-            String query) {
+    public ProductRequirement parseRequirements(String query) {
+        String text = safeQuery(query);
+        ProductRequirement requirement = new ProductRequirement();
 
-        ProductRequirement requirement =
-                new ProductRequirement();
+        requirement.setCategory(extractCategory(text));
+        requirement.setMaxPrice(extractMaxPrice(text));
+        requirement.setMinRating(extractMinRating(text));
 
-        requirement.setCategory(
-                extractCategory(query));
+        // Smartphone requirements
+        requirement.setMinRam(extractRam(text));
+        requirement.setMinStorage(extractStorage(text));
+        requirement.setMinCamera(extractCamera(text));
+        requirement.setMinBattery(extractBattery(text));
+        requirement.setMinDisplaySize(extractDisplaySize(text));
+        requirement.setMinRefreshRate(extractRefreshRate(text));
+        requirement.setRequires5G(extract5G(text));
 
-        requirement.setMaxPrice(
-                extractMaxPrice(query));
+        // Shared and laptop requirements
+        requirement.setPreferredBrand(extractPreferredBrand(text));
+        requirement.setPreferredProcessor(extractProcessor(text));
 
-        requirement.setMinRating(
-                extractMinRating(query));
+        // Smart TV requirements
+        requirement.setRequiredResolution(extractResolution(text));
+        requirement.setPreferredDisplayTechnology(
+                extractDisplayTechnology(text));
 
-        requirement.setMinRam(
-                extractRam(query));
+        // Headphones requirements
+        requirement.setRequiresNoiseCancellation(
+                extractNoiseCancellation(text));
+        requirement.setMinBatteryLife(extractBatteryLifeHours(text));
+        requirement.setMaxWeight(extractMaxWeightGrams(text));
 
-        requirement.setMinStorage(
-                extractStorage(query));
-
-        requirement.setMinCamera(
-                extractCamera(query));
-
-        requirement.setMinBattery(
-                extractBattery(query));
-
-        requirement.setMinDisplaySize(
-                extractDisplaySize(query));
-
-        requirement.setMinRefreshRate(
-                extractRefreshRate(query));
-
-        requirement.setRequires5G(
-                extract5G(query));
-
-        requirement.setPreferredBrand(
-                extractPreferredBrand(query));
+        // Smartwatch requirements
+        requirement.setRequiredWaterResistance(
+                extractWaterResistance(text));
+        requirement.setMinWaterResistance(
+                extractWaterResistanceLevel(text));
+        requirement.setPreferredCompatibility(extractCompatibility(text));
 
         return requirement;
     }
 
+    private String safeQuery(String query) {
+        return query == null ? "" : query.trim();
+    }
 
     // ============================================================
-    // Extract category
+    // CATEGORY DETECTION
     // ============================================================
 
-    private String extractCategory(
-            String query) {
+    private String extractCategory(String query) {
+        String text = query.toLowerCase(Locale.ROOT);
 
-        if (query == null) {
-            return "";
+        // Check specific categories before generic keywords.
+        if (containsAny(text, "smartwatch", "smart watch",
+                "fitness watch", "fitness tracker", "wearable")) {
+            return "Smartwatch";
         }
 
-        String lowerQuery =
-                query.toLowerCase();
+        if (containsAny(text, "headphones", "headphone",
+                "earbuds", "earbud", "earphones", "earphone",
+                "wireless buds", "headset")) {
+            return "Headphones";
+        }
 
-        if (lowerQuery.contains("smartphone")
-                || lowerQuery.contains("phone")) {
+        if (containsAny(text, "smart tv", "smart television",
+                "television", "tv")) {
+            return "TV";
+        }
 
+        if (containsAny(text, "smartphone", "smart phone",
+                "mobile phone", "mobile", "phone")) {
             return "Smartphone";
         }
 
-        if (lowerQuery.contains("laptop")
-                || lowerQuery.contains("macbook")) {
-
+        if (containsAny(text, "laptop", "macbook",
+                "notebook computer")) {
             return "Laptop";
         }
 
         return "";
     }
 
+    private boolean containsAny(String text, String... keywords) {
+        for (String keyword : keywords) {
+            Pattern pattern = Pattern.compile(
+                    "(?<![a-z0-9])" + Pattern.quote(keyword)
+                            + "(?![a-z0-9])",
+                    Pattern.CASE_INSENSITIVE
+            );
 
-    // ============================================================
-    // Extract maximum price
-    // ============================================================
-
-    private double extractMaxPrice(
-            String query) {
-
-        if (query == null) {
-            return Double.MAX_VALUE;
+            if (pattern.matcher(text).find()) {
+                return true;
+            }
         }
 
-        Pattern pattern =
-                Pattern.compile(
-                        "(?:under|below|less than|maximum|max)"
-                                + "\\s*"
-                                + "(?:₹|rs\\.?|inr)?"
-                                + "\\s*"
-                                + "(\\d+(?:,\\d+)*)",
-                        Pattern.CASE_INSENSITIVE
-                );
+        return false;
+    }
 
-        Matcher matcher =
-                pattern.matcher(query);
+    // ============================================================
+    // PRICE
+    // ============================================================
+
+    private double extractMaxPrice(String query) {
+        Pattern pattern = Pattern.compile(
+                "(?:under|below|less than|maximum|max|within|"
+                        + "budget(?: of)?|up to)\\s*"
+                        + "(?:₹|rs\\.?\\s*|inr\\s*)?"
+                        + "(\\d[\\d,]*(?:\\.\\d+)?)",
+                Pattern.CASE_INSENSITIVE
+        );
+
+        Matcher matcher = pattern.matcher(query);
 
         if (matcher.find()) {
-
             return Double.parseDouble(
-                    matcher.group(1)
-                            .replace(",", "")
-            );
+                    matcher.group(1).replace(",", ""));
         }
 
         return Double.MAX_VALUE;
     }
 
-
     // ============================================================
-    // Extract minimum rating
+    // MINIMUM RATING
     // ============================================================
 
-    private double extractMinRating(
-            String query) {
+    private double extractMinRating(String query) {
+        Pattern pattern = Pattern.compile(
+                "(?:rating|rated)\\s*"
+                        + "(?:above|over|greater than|at least|of)?\\s*"
+                        + "(\\d+(?:\\.\\d+)?)",
+                Pattern.CASE_INSENSITIVE
+        );
 
-        if (query == null) {
-            return 0.0;
-        }
+        Matcher matcher = pattern.matcher(query);
 
-        Pattern pattern =
-                Pattern.compile(
-                        "(?:rating|rated)"
-                                + "\\s*"
-                                + "(?:above|over|greater than|at least)?"
-                                + "\\s*"
-                                + "(\\d+(?:\\.\\d+)?)",
-                        Pattern.CASE_INSENSITIVE
-                );
-
-        Matcher matcher =
-                pattern.matcher(query);
-
-        if (matcher.find()) {
-
-            return Double.parseDouble(
-                    matcher.group(1)
-            );
-        }
-
-        return 0.0;
+        return matcher.find()
+                ? Double.parseDouble(matcher.group(1))
+                : 0.0;
     }
 
-
     // ============================================================
-    // Extract RAM requirement
+    // SMARTPHONE REQUIREMENTS
     // ============================================================
 
-    private Double extractRam(
-            String query) {
+    private Double extractRam(String query) {
+        Pattern pattern = Pattern.compile(
+                "(?:at least|minimum|min)?\\s*"
+                        + "(\\d+(?:\\.\\d+)?)\\s*(?:gb|g)\\s*"
+                        + "(?:ram|memory)",
+                Pattern.CASE_INSENSITIVE
+        );
 
-        if (query == null) {
+        Matcher matcher = pattern.matcher(query);
+
+        return matcher.find()
+                ? Double.parseDouble(matcher.group(1))
+                : null;
+    }
+
+    private Double extractStorage(String query) {
+        Pattern pattern = Pattern.compile(
+                "(\\d+(?:\\.\\d+)?)\\s*(gb|tb)\\s*"
+                        + "(?:storage|rom|ssd|disk)",
+                Pattern.CASE_INSENSITIVE
+        );
+
+        Matcher matcher = pattern.matcher(query);
+
+        if (!matcher.find()) {
             return null;
         }
 
-        Pattern pattern =
-                Pattern.compile(
-                        "(?:at least|minimum|min)?"
-                                + "\\s*"
-                                + "(\\d+(?:\\.\\d+)?)"
-                                + "\\s*(?:gb|g)"
-                                + "\\s*(?:ram|memory)",
-                        Pattern.CASE_INSENSITIVE
-                );
+        double value = Double.parseDouble(matcher.group(1));
 
-        Matcher matcher =
-                pattern.matcher(query);
+        if (matcher.group(2).equalsIgnoreCase("tb")) {
+            value *= 1024;
+        }
+
+        return value;
+    }
+
+    private Double extractCamera(String query) {
+        Pattern pattern = Pattern.compile(
+                "(?:at least|minimum|min)?\\s*"
+                        + "(\\d+(?:\\.\\d+)?)\\s*"
+                        + "(?:mp|megapixels?|megapixel)"
+                        + "\\s*(?:camera)?",
+                Pattern.CASE_INSENSITIVE
+        );
+
+        Matcher matcher = pattern.matcher(query);
+
+        return matcher.find()
+                ? Double.parseDouble(matcher.group(1))
+                : null;
+    }
+
+    private Double extractBattery(String query) {
+        Pattern pattern = Pattern.compile(
+                "(?:at least|minimum|min)?\\s*"
+                        + "(\\d+(?:\\.\\d+)?)\\s*"
+                        + "(?:mah|milliamp.hours?)\\s*(?:battery)?",
+                Pattern.CASE_INSENSITIVE
+        );
+
+        Matcher matcher = pattern.matcher(query);
+
+        return matcher.find()
+                ? Double.parseDouble(matcher.group(1))
+                : null;
+    }
+
+    private Double extractDisplaySize(String query) {
+        Pattern pattern = Pattern.compile(
+                "(?:at least|minimum|min|larger than|over)?\\s*"
+                        + "(\\d+(?:\\.\\d+)?)\\s*"
+                        + "(?:inches|inch|in)\\b\\s*"
+                        + "(?:display|screen)?",
+                Pattern.CASE_INSENSITIVE
+        );
+
+        Matcher matcher = pattern.matcher(query);
 
         if (matcher.find()) {
-
-            return Double.parseDouble(
-                    matcher.group(1)
-            );
+            return Double.parseDouble(matcher.group(1));
         }
 
         return null;
     }
 
+    private Double extractRefreshRate(String query) {
+        Pattern pattern = Pattern.compile(
+                "(?:at least|minimum|min)?\\s*"
+                        + "(\\d+(?:\\.\\d+)?)\\s*hz",
+                Pattern.CASE_INSENSITIVE
+        );
+
+        Matcher matcher = pattern.matcher(query);
+
+        return matcher.find()
+                ? Double.parseDouble(matcher.group(1))
+                : null;
+    }
+
+    private Boolean extract5G(String query) {
+        Pattern pattern = Pattern.compile("\\b5g\\b",
+                Pattern.CASE_INSENSITIVE);
+
+        return pattern.matcher(query).find() ? true : null;
+    }
 
     // ============================================================
-    // Extract storage requirement
+    // LAPTOP PROCESSOR REQUIREMENT
     // ============================================================
 
-    private Double extractStorage(
-            String query) {
+    private String extractProcessor(String query) {
+        Pattern pattern = Pattern.compile(
+                "\\b(?:intel\\s+core\\s+)?"
+                        + "(i[3579]|m[1-4]|ryzen\\s*[3579])\\b",
+                Pattern.CASE_INSENSITIVE
+        );
 
-        if (query == null) {
+        Matcher matcher = pattern.matcher(query);
+
+        if (!matcher.find()) {
             return null;
         }
 
-        /*
-         * Storage must explicitly be followed by:
-         *
-         * storage
-         * ROM
-         * SSD
-         * disk
-         *
-         * This prevents:
-         *
-         * 12GB RAM
-         *
-         * from being incorrectly detected as
-         * 12GB storage.
-         */
+        return matcher.group(1).replaceAll("\\s+", " ")
+                .toUpperCase(Locale.ROOT);
+    }
 
-        Pattern pattern =
-                Pattern.compile(
-                        "(\\d+(?:\\.\\d+)?)"
-                                + "\\s*(gb|tb)"
-                                + "\\s*(?:storage|rom|ssd|disk)",
-                        Pattern.CASE_INSENSITIVE
-                );
+    // ============================================================
+    // SMART TV REQUIREMENTS
+    // ============================================================
 
-        Matcher matcher =
-                pattern.matcher(query);
+    private String extractResolution(String query) {
+        String text = query.toLowerCase(Locale.ROOT);
 
-        if (matcher.find()) {
+        if (containsAny(text, "8k", "4320p")) {
+            return "8K";
+        }
 
-            double value =
-                    Double.parseDouble(
-                            matcher.group(1)
-                    );
+        if (containsAny(text, "4k", "2160p", "uhd", "ultra hd")) {
+            return "4K";
+        }
 
-            String unit =
-                    matcher.group(2)
-                            .toLowerCase();
+        if (containsAny(text, "1080p", "full hd", "fhd")) {
+            return "Full HD";
+        }
 
-            // Convert TB to GB
-            if (unit.equals("tb")) {
-
-                value = value * 1024;
-            }
-
-            return value;
+        if (containsAny(text, "720p", "hd ready")) {
+            return "HD";
         }
 
         return null;
     }
 
+    private String extractDisplayTechnology(String query) {
+        String text = query.toLowerCase(Locale.ROOT);
 
-    // ============================================================
-    // Extract camera requirement
-    // ============================================================
-
-    private Double extractCamera(
-            String query) {
-
-        if (query == null) {
-            return null;
+        if (containsAny(text, "mini led", "mini-led")) {
+            return "Mini LED";
         }
 
-        Pattern pattern =
-                Pattern.compile(
-                        "(?:at least|minimum|min)?"
-                                + "\\s*"
-                                + "(\\d+(?:\\.\\d+)?)"
-                                + "\\s*(?:mp|megapixel)"
-                                + "\\s*(?:camera)?",
-                        Pattern.CASE_INSENSITIVE
-                );
+        if (containsAny(text, "oled")) {
+            return "OLED";
+        }
 
-        Matcher matcher =
-                pattern.matcher(query);
+        if (containsAny(text, "qled")) {
+            return "QLED";
+        }
 
-        if (matcher.find()) {
-
-            return Double.parseDouble(
-                    matcher.group(1)
-            );
+        if (containsAny(text, "led")) {
+            return "LED";
         }
 
         return null;
     }
 
-
     // ============================================================
-    // Extract battery requirement
+    // HEADPHONES REQUIREMENTS
     // ============================================================
 
-    private Double extractBattery(
-            String query) {
+    private Boolean extractNoiseCancellation(String query) {
+        String text = query.toLowerCase(Locale.ROOT);
 
-        if (query == null) {
-            return null;
+        if (containsAny(text, "without noise cancellation",
+                "no noise cancellation",
+                "noise cancellation not required")) {
+            return false;
         }
 
-        Pattern pattern =
-                Pattern.compile(
-                        "(?:at least|minimum|min)?"
-                                + "\\s*"
-                                + "(\\d+(?:\\.\\d+)?)"
-                                + "\\s*(?:mah|mAh)"
-                                + "\\s*(?:battery)?",
-                        Pattern.CASE_INSENSITIVE
-                );
-
-        Matcher matcher =
-                pattern.matcher(query);
-
-        if (matcher.find()) {
-
-            return Double.parseDouble(
-                    matcher.group(1)
-            );
-        }
-
-        return null;
-    }
-
-
-    // ============================================================
-    // Extract display size
-    // ============================================================
-
-    private Double extractDisplaySize(
-            String query) {
-
-        if (query == null) {
-            return null;
-        }
-
-        Pattern pattern =
-                Pattern.compile(
-                        "(?:at least|minimum|min)?"
-                                + "\\s*"
-                                + "(\\d+(?:\\.\\d+)?)"
-                                + "\\s*(?:inch|inches|in|\\\")"
-                                + "\\s*(?:display|screen)?",
-                        Pattern.CASE_INSENSITIVE
-                );
-
-        Matcher matcher =
-                pattern.matcher(query);
-
-        if (matcher.find()) {
-
-            return Double.parseDouble(
-                    matcher.group(1)
-            );
-        }
-
-        return null;
-    }
-
-
-    // ============================================================
-    // Extract refresh rate
-    // ============================================================
-
-    private Double extractRefreshRate(
-            String query) {
-
-        if (query == null) {
-            return null;
-        }
-
-        Pattern pattern =
-                Pattern.compile(
-                        "(?:at least|minimum|min)?"
-                                + "\\s*"
-                                + "(\\d+(?:\\.\\d+)?)"
-                                + "\\s*(?:hz)"
-                                + "\\s*(?:refresh rate)?",
-                        Pattern.CASE_INSENSITIVE
-                );
-
-        Matcher matcher =
-                pattern.matcher(query);
-
-        if (matcher.find()) {
-
-            return Double.parseDouble(
-                    matcher.group(1)
-            );
-        }
-
-        return null;
-    }
-
-
-    // ============================================================
-    // Extract 5G requirement
-    // ============================================================
-
-    private Boolean extract5G(
-            String query) {
-
-        if (query == null) {
-            return null;
-        }
-
-        String lowerQuery =
-                query.toLowerCase();
-
-        if (lowerQuery.contains("5g")) {
-
+        if (containsAny(text, "noise cancellation",
+                "noise cancelling", "noise-cancelling",
+                "active noise control", "anc")) {
             return true;
         }
 
         return null;
     }
 
+    /*
+     * Returns battery life in HOURS.
+     * Examples: "20 hours battery life" -> 20
+     *           "2 days battery life"   -> 48
+     */
+    private Double extractBatteryLifeHours(String query) {
+        Pattern pattern = Pattern.compile(
+                "(?:battery life|playback|runtime)\\s*(?:of)?\\s*"
+                        + "(\\d+(?:\\.\\d+)?)\\s*"
+                        + "(hours?|hrs?|days?)\\b"
+                        + "|(?:at least|minimum|min|over|above|more than)?\\s*"
+                        + "(\\d+(?:\\.\\d+)?)\\s*"
+                        + "(hours?|hrs?|days?)\\b"
+                        + "\\s*(?:of\\s*)?(?:battery life|playback|runtime)",
+                Pattern.CASE_INSENSITIVE
+        );
 
-    // ============================================================
-    // Extract preferred brand
-    // ============================================================
+        Matcher matcher = pattern.matcher(query);
 
-    private String extractPreferredBrand(
-            String query) {
-
-        if (query == null) {
+        if (!matcher.find()) {
             return null;
         }
 
-        String lowerQuery =
-                query.toLowerCase();
+        String number = matcher.group(1) != null
+                ? matcher.group(1) : matcher.group(3);
 
+        String unit = matcher.group(2) != null
+                ? matcher.group(2) : matcher.group(4);
+
+        double value = Double.parseDouble(number);
+
+        if (unit.toLowerCase(Locale.ROOT).startsWith("day")) {
+            value *= 24;
+        }
+
+        return value;
+    }
+
+    /*
+     * Returns maximum weight in GRAMS.
+     */
+    private Double extractMaxWeightGrams(String query) {
+        Pattern pattern = Pattern.compile(
+                "(?:weight\\s*(?:under|below|less than|max)?\\s*"
+                        + "|(?:under|below|less than|max)\\s*)"
+                        + "(\\d+(?:\\.\\d+)?)\\s*"
+                        + "(kg|kgs|kilograms?|g|grams?)\\b",
+                Pattern.CASE_INSENSITIVE
+        );
+
+        Matcher matcher = pattern.matcher(query);
+
+        if (!matcher.find()) {
+            return null;
+        }
+
+        double value = Double.parseDouble(matcher.group(1));
+        String unit = matcher.group(2).toLowerCase(Locale.ROOT);
+
+        if (unit.startsWith("kg") || unit.startsWith("kilogram")) {
+            value *= 1000;
+        }
+
+        return value;
+    }
+
+    // ============================================================
+    // SMARTWATCH REQUIREMENTS
+    // ============================================================
+
+    private String extractWaterResistance(String query) {
+        String text = query.toLowerCase(Locale.ROOT);
+
+        if (containsAny(text, "10 atm")) {
+            return "10 ATM";
+        }
+
+        if (containsAny(text, "5 atm")) {
+            return "5 ATM";
+        }
+
+        if (containsAny(text, "3 atm")) {
+            return "3 ATM";
+        }
+
+        if (containsAny(text, "ip68")) {
+            return "IP68";
+        }
+
+        if (containsAny(text, "ip67")) {
+            return "IP67";
+        }
+
+        if (containsAny(text, "water resistant",
+                "water resistance", "waterproof", "swimming")) {
+            return "Water Resistant";
+        }
+
+        return null;
+    }
+
+    private Double extractWaterResistanceLevel(String query) {
+        Pattern pattern = Pattern.compile(
+                "\\b(3|5|10)\\s*atm\\b",
+                Pattern.CASE_INSENSITIVE
+        );
+
+        Matcher matcher = pattern.matcher(query);
+
+        return matcher.find()
+                ? Double.parseDouble(matcher.group(1))
+                : null;
+    }
+
+    private String extractCompatibility(String query) {
+        String text = query.toLowerCase(Locale.ROOT);
+
+        if (containsAny(text, "ios", "iphone compatible",
+                "apple compatible")) {
+            return "iOS";
+        }
+
+        if (containsAny(text, "android compatible", "android phone")) {
+            return "Android";
+        }
+
+        if (containsAny(text, "android", "ios")) {
+            return "Android/iOS";
+        }
+
+        return null;
+    }
+
+    // ============================================================
+    // PREFERRED BRAND
+    // ============================================================
+
+    private String extractPreferredBrand(String query) {
         String[] brands = {
-                "apple",
-                "samsung",
-                "google",
-                "oneplus",
-                "dell",
-                "asus",
-                "lenovo"
+                "oneplus", "samsung", "google", "apple",
+                "asus", "dell", "lenovo", "sony", "lg",
+                "xiaomi", "redmi", "realme", "boat",
+                "jbl", "bose", "noise", "amazfit",
+                "garmin", "fitbit", "tcl", "hisense",
+                "motorola", "hp", "acer", "msi"
         };
 
         for (String brand : brands) {
-
-            if (lowerQuery.contains(brand)) {
-
+            if (containsAny(query, brand)) {
                 return capitalizeBrand(brand);
             }
         }
@@ -477,48 +529,33 @@ public class NaturalLanguageQueryService {
         return null;
     }
 
-
-    // ============================================================
-    // Format brand name
-    // ============================================================
-
-    private String capitalizeBrand(
-            String brand) {
-
-        if (brand == null
-                || brand.isEmpty()) {
-
-            return brand;
+    private String capitalizeBrand(String brand) {
+        switch (brand.toLowerCase(Locale.ROOT)) {
+            case "oneplus":
+                return "OnePlus";
+            case "asus":
+                return "ASUS";
+            case "lg":
+                return "LG";
+            case "jbl":
+                return "JBL";
+            case "hp":
+                return "HP";
+            case "msi":
+                return "MSI";
+            case "boat":
+                return "boAt";
+            case "xiaomi":
+                return "Xiaomi";
+            case "redmi":
+                return "Redmi";
+            case "realme":
+                return "Realme";
+            case "tcl":
+                return "TCL";
+            default:
+                return brand.substring(0, 1).toUpperCase(Locale.ROOT)
+                        + brand.substring(1).toLowerCase(Locale.ROOT);
         }
-
-        if (brand.equalsIgnoreCase("oneplus")) {
-            return "OnePlus";
-        }
-
-        if (brand.equalsIgnoreCase("asus")) {
-            return "ASUS";
-        }
-
-        if (brand.equalsIgnoreCase("dell")) {
-            return "Dell";
-        }
-
-        if (brand.equalsIgnoreCase("lenovo")) {
-            return "Lenovo";
-        }
-
-        if (brand.equalsIgnoreCase("apple")) {
-            return "Apple";
-        }
-
-        if (brand.equalsIgnoreCase("samsung")) {
-            return "Samsung";
-        }
-
-        if (brand.equalsIgnoreCase("google")) {
-            return "Google";
-        }
-
-        return brand;
     }
 }
