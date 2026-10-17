@@ -110,6 +110,10 @@ public class ProductRecommendationService {
                         + "was selected as the top recommendation";
             }
         }
+        System.out.println("DEBUG ranked brands = "
+        + rankedProducts.stream()
+                .map(Product::getBrand)
+                .toList());
 
         RecommendationExplanation explanation = new RecommendationExplanation(
                 budgetMessage,
@@ -275,83 +279,112 @@ public class ProductRecommendationService {
     // FILTER PRODUCTS USING ALL REQUIREMENTS
     // ============================================================
 
-    private List<Product> filterByRequirements(
-            ProductRequirement requirement) {
+    
+private List<Product> filterByRequirements(
+        ProductRequirement requirement) {
 
-        if (requirement == null) {
-            throw new IllegalArgumentException(
-                    "Product requirements cannot be null");
-        }
-
-        return productService.getAllProducts()
-                .stream()
-
-                // Category
-                .filter(product -> {
-                    String requested = requirement.getCategory();
-
-                    return requested == null || requested.isBlank()
-                            || (product.getCategory() != null
-                            && product.getCategory().equalsIgnoreCase(requested));
-                })
-
-                // Availability, budget and rating
-                .filter(Product::isAvailable)
-                .filter(product -> requirement.getMaxPrice() == null
-                        || requirement.getMaxPrice() == Double.MAX_VALUE
-                        || product.getPrice() <= requirement.getMaxPrice())
-                .filter(product -> requirement.getMinRating() == null
-                        || requirement.getMinRating() <= 0
-                        || product.getRating() >= requirement.getMinRating())
-
-                // Smartphone requirements
-                .filter(product -> matchesNumericRequirement(
-                        product, "RAM", requirement.getMinRam()))
-                .filter(product -> matchesNumericRequirement(
-                        product, "Storage", requirement.getMinStorage()))
-                .filter(product -> matchesNumericRequirement(
-                        product, "Main Camera", requirement.getMinCamera()))
-                .filter(product -> matchesNumericRequirement(
-                        product, "Battery", requirement.getMinBattery()))
-                .filter(product -> matchesNumericAliases(
-                        product,
-                        new String[]{"Display Size", "Screen Size"},
-                        requirement.getMinDisplaySize()))
-                .filter(product -> matchesNumericRequirement(
-                        product, "Refresh Rate", requirement.getMinRefreshRate()))
-                .filter(product -> matchesBooleanRequirement(
-                        product, "5G", requirement.getRequires5G()))
-
-                // Laptop processor
-                .filter(product -> matchesTextRequirement(
-                        product, "Processor",
-                        requirement.getPreferredProcessor()))
-
-                // Smart TV requirements
-                .filter(product -> matchesResolution(
-                        product, requirement.getRequiredResolution()))
-                .filter(product -> matchesTextRequirement(
-                        product, "Display Technology",
-                        requirement.getPreferredDisplayTechnology()))
-
-                // Headphones requirements
-                .filter(product -> matchesNoiseCancellation(
-                        product, requirement.getRequiresNoiseCancellation()))
-                .filter(product -> matchesBatteryLife(
-                        product, requirement.getMinBatteryLife()))
-                .filter(product -> matchesMaximumWeight(
-                        product, requirement.getMaxWeight()))
-
-                // Smartwatch requirements
-                .filter(product -> matchesWaterResistance(
-                        product, requirement.getRequiredWaterResistance()))
-                .filter(product -> matchesMinimumWaterResistance(
-                        product, requirement.getMinWaterResistance()))
-                .filter(product -> matchesCompatibility(
-                        product, requirement.getPreferredCompatibility()))
-
-                .collect(Collectors.toList());
+    if (requirement == null) {
+        throw new IllegalArgumentException(
+                "Product requirements cannot be null");
     }
+
+    return productService.getAllProducts()
+            .stream()
+
+            // Category
+            .filter(product -> {
+                String requested = requirement.getCategory();
+
+                return requested == null || requested.isBlank()
+                        || (product.getCategory() != null
+                        && product.getCategory()
+                        .equalsIgnoreCase(requested));
+            })
+
+            // Brand: strictly filter when the requested brand exists
+            .filter(product -> {
+                String brand = requirement.getPreferredBrand();
+
+                return brand == null || brand.isBlank()
+                        || (product.getBrand() != null
+                        && product.getBrand()
+                        .trim()
+                        .equalsIgnoreCase(brand.trim()));
+            })
+
+            // Availability
+            .filter(Product::isAvailable)
+
+            // Maximum price
+            .filter(product -> requirement.getMaxPrice() == null
+                    || requirement.getMaxPrice() == Double.MAX_VALUE
+                    || product.getPrice() <= requirement.getMaxPrice())
+
+            // Minimum rating, including strict "above" handling
+            .filter(product -> {
+                Double rating = requirement.getMinRating();
+
+                if (rating == null || rating <= 0) {
+                    return true;
+                }
+
+                if (requirement.isStrictMinRating()) {
+                    return product.getRating() > rating;
+                }
+
+                return product.getRating() >= rating;
+            })
+
+            // Smartphone specifications
+            .filter(product -> matchesNumericRequirement(
+                    product, "RAM", requirement.getMinRam()))
+            .filter(product -> matchesNumericRequirement(
+                    product, "Storage", requirement.getMinStorage()))
+            .filter(product -> matchesNumericRequirement(
+                    product, "Main Camera", requirement.getMinCamera()))
+            .filter(product -> matchesNumericRequirement(
+                    product, "Battery", requirement.getMinBattery()))
+            .filter(product -> matchesNumericAliases(
+                    product,
+                    new String[]{"Display Size", "Screen Size"},
+                    requirement.getMinDisplaySize()))
+            .filter(product -> matchesNumericRequirement(
+                    product, "Refresh Rate",
+                    requirement.getMinRefreshRate()))
+            .filter(product -> matchesBooleanRequirement(
+                    product, "5G", requirement.getRequires5G()))
+
+            // Laptop processor
+            .filter(product -> matchesTextRequirement(
+                    product, "Processor",
+                    requirement.getPreferredProcessor()))
+
+            // Smart TV specifications
+            .filter(product -> matchesResolution(
+                    product, requirement.getRequiredResolution()))
+            .filter(product -> matchesTextRequirement(
+                    product, "Display Technology",
+                    requirement.getPreferredDisplayTechnology()))
+
+            // Headphones
+            .filter(product -> matchesNoiseCancellation(
+                    product, requirement.getRequiresNoiseCancellation()))
+            .filter(product -> matchesBatteryLife(
+                    product, requirement.getMinBatteryLife()))
+            .filter(product -> matchesMaximumWeight(
+                    product, requirement.getMaxWeight()))
+
+            // Smartwatch
+            .filter(product -> matchesWaterResistance(
+                    product, requirement.getRequiredWaterResistance()))
+            .filter(product -> matchesMinimumWaterResistance(
+                    product, requirement.getMinWaterResistance()))
+            .filter(product -> matchesCompatibility(
+                    product, requirement.getPreferredCompatibility()))
+
+            .collect(Collectors.toList());
+}
+
 
     // ============================================================
     // SPECIFICATION LOOKUPS
@@ -958,36 +991,36 @@ public class ProductRecommendationService {
     // PREFERRED BRAND PRIORITY
     // ============================================================
 
-    private void applyPreferredBrandPriority(
-            List<Product> products, String preferredBrand) {
+    
+private void applyPreferredBrandPriority(
+        List<Product> products, String preferredBrand) {
 
-        if (preferredBrand == null || preferredBrand.isBlank()) {
-            return;
-        }
-
-        products.sort((product1, product2) -> {
-
-            boolean firstMatches = product1.getBrand() != null
-                    && product1.getBrand().equalsIgnoreCase(preferredBrand);
-
-            boolean secondMatches = product2.getBrand() != null
-                    && product2.getBrand().equalsIgnoreCase(preferredBrand);
-
-            if (firstMatches && !secondMatches) {
-                return -1;
-            }
-
-            if (!firstMatches && secondMatches) {
-                return 1;
-            }
-
-            return 0;
-        });
+    if (products == null || products.isEmpty()
+            || preferredBrand == null || preferredBrand.isBlank()) {
+        return;
     }
 
-    // ============================================================
-    // VALIDATION AND FORMATTING
-    // ============================================================
+    products.sort((product1, product2) -> {
+        boolean firstMatches = product1.getBrand() != null
+                && product1.getBrand().trim()
+                        .equalsIgnoreCase(preferredBrand.trim());
+
+        boolean secondMatches = product2.getBrand() != null
+                && product2.getBrand().trim()
+                        .equalsIgnoreCase(preferredBrand.trim());
+
+        if (firstMatches && !secondMatches) {
+            return -1;
+        }
+
+        if (!firstMatches && secondMatches) {
+            return 1;
+        }
+
+        return 0;
+    });
+}
+
 
     private void validateLimit(int limit) {
 

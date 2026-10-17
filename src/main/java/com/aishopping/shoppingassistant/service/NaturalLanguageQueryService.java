@@ -30,47 +30,40 @@ public class NaturalLanguageQueryService {
     // STRUCTURED REQUIREMENT PARSER
     // ============================================================
 
-    public ProductRequirement parseRequirements(String query) {
-        String text = safeQuery(query);
-        ProductRequirement requirement = new ProductRequirement();
+    
+public ProductRequirement parseRequirements(String query) {
+    String text = safeQuery(query);
+    ProductRequirement requirement = new ProductRequirement();
 
-        requirement.setCategory(extractCategory(text));
-        requirement.setMaxPrice(extractMaxPrice(text));
-        requirement.setMinRating(extractMinRating(text));
+    
+requirement.setCategory(extractCategory(text));
+requirement.setMaxPrice(extractMaxPrice(text));
+requirement.setMinRating(extractMinRating(text));
 
-        // Smartphone requirements
-        requirement.setMinRam(extractRam(text));
-        requirement.setMinStorage(extractStorage(text));
-        requirement.setMinCamera(extractCamera(text));
-        requirement.setMinBattery(extractBattery(text));
-        requirement.setMinDisplaySize(extractDisplaySize(text));
-        requirement.setMinRefreshRate(extractRefreshRate(text));
-        requirement.setRequires5G(extract5G(text));
+requirement.setStrictMinRating(
+        text.matches("(?i).*\\b(above|over|greater than)\\b.*")
+);
 
-        // Shared and laptop requirements
-        requirement.setPreferredBrand(extractPreferredBrand(text));
-        requirement.setPreferredProcessor(extractProcessor(text));
+    System.out.println("DEBUG minRating = "
+            + requirement.getMinRating());
+    System.out.println("DEBUG strictMinRating = "
+            + requirement.isStrictMinRating());
 
-        // Smart TV requirements
-        requirement.setRequiredResolution(extractResolution(text));
-        requirement.setPreferredDisplayTechnology(
-                extractDisplayTechnology(text));
+    // Smartphone requirements
+    requirement.setMinRam(extractRam(text));
+    requirement.setMinStorage(extractStorage(text));
+    requirement.setMinCamera(extractCamera(text));
+    requirement.setMinBattery(extractBattery(text));
+    requirement.setMinDisplaySize(extractDisplaySize(text));
+    requirement.setMinRefreshRate(extractRefreshRate(text));
+    requirement.setRequires5G(extract5G(text));
 
-        // Headphones requirements
-        requirement.setRequiresNoiseCancellation(
-                extractNoiseCancellation(text));
-        requirement.setMinBatteryLife(extractBatteryLifeHours(text));
-        requirement.setMaxWeight(extractMaxWeightGrams(text));
+    // Shared and other product requirements
+    requirement.setPreferredBrand(extractPreferredBrand(text));
 
-        // Smartwatch requirements
-        requirement.setRequiredWaterResistance(
-                extractWaterResistance(text));
-        requirement.setMinWaterResistance(
-                extractWaterResistanceLevel(text));
-        requirement.setPreferredCompatibility(extractCompatibility(text));
+    return requirement;
+}
 
-        return requirement;
-    }
 
     private String safeQuery(String query) {
         return query == null ? "" : query.trim();
@@ -156,20 +149,26 @@ public class NaturalLanguageQueryService {
     // MINIMUM RATING
     // ============================================================
 
-    private double extractMinRating(String query) {
-        Pattern pattern = Pattern.compile(
-                "(?:rating|rated)\\s*"
-                        + "(?:above|over|greater than|at least|of)?\\s*"
-                        + "(\\d+(?:\\.\\d+)?)",
-                Pattern.CASE_INSENSITIVE
-        );
+    
+private double extractMinRating(String query) {
+    Pattern pattern = Pattern.compile(
+            "(?:rating|rated)\\s*(?:of\\s*)?"
+                    + "(?:(?:above|over|greater than|at least)\\s*)?"
+                    + "(\\d+(?:\\.\\d+)?)",
+            Pattern.CASE_INSENSITIVE
+    );
 
-        Matcher matcher = pattern.matcher(query);
+    Matcher matcher = pattern.matcher(query);
 
-        return matcher.find()
-                ? Double.parseDouble(matcher.group(1))
-                : 0.0;
+    if (matcher.find()) {
+        return Double.parseDouble(matcher.group(1));
     }
+
+    return 0.0;
+}
+
+
+
 
     // ============================================================
     // SMARTPHONE REQUIREMENTS

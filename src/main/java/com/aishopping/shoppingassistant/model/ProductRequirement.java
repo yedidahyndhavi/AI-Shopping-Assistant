@@ -6,6 +6,7 @@ public class ProductRequirement {
     private String category;
     private Double maxPrice;
     private Double minRating;
+    private boolean strictMinRating;
 
     // Smartphone requirements
     private Double minRam;
@@ -62,6 +63,13 @@ public class ProductRequirement {
     public void setMinRating(Double minRating) {
         this.minRating = minRating;
     }
+    public boolean isStrictMinRating() {
+    return strictMinRating;
+}
+    public void setStrictMinRating(boolean strictMinRating) {
+    this.strictMinRating = strictMinRating;
+}
+
 
     public Double getMinRam() {
         return minRam;
