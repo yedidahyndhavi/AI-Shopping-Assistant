@@ -850,16 +850,28 @@ private List<Product> filterByRequirements(
         }
 
         // Rating explanation
+        
+        // Rating explanation
         if (requirement.getMinRating() != null
                 && requirement.getMinRating() > 0) {
 
+            String ratingCondition =
+                    requirement.isStrictMinRating()
+                            ? "must be greater than "
+                            : "must be at least ";
+
             explanation.setRatingMessage(
-                    "Rating " + product.getRating()
-                    + " meets your minimum rating of "
-                    + requirement.getMinRating());
+                    "Product rating: " + product.getRating()
+                    + ". Your requirement: rating "
+                    + ratingCondition
+                    + requirement.getMinRating()
+                    + "."
+            );
+
         } else {
             explanation.setRatingMessage(
-                    "No minimum rating was specified.");
+                    "No minimum rating was specified."
+            );
         }
 
         // Brand explanation
