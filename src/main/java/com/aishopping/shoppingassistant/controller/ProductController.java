@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import com.aishopping.shoppingassistant.model.ComparisonInsight;
+import com.aishopping.shoppingassistant.service.ComparisonInsightService;
 
 @RestController
 @RequestMapping("/api/products")
@@ -31,18 +33,21 @@ public class ProductController {
     private final ProductRepository productRepository;
     private final ProductRecommendationService productRecommendationService;
     private final NaturalLanguageQueryService naturalLanguageQueryService;
+    private final ComparisonInsightService comparisonInsightService;
 
     public ProductController(
-            ProductService productService,
-            ProductRepository productRepository,
-            ProductRecommendationService productRecommendationService,
-            NaturalLanguageQueryService naturalLanguageQueryService) {
+        ProductService productService,
+        ProductRepository productRepository,
+        ProductRecommendationService productRecommendationService,
+        NaturalLanguageQueryService naturalLanguageQueryService,
+        ComparisonInsightService comparisonInsightService) {
 
-        this.productService = productService;
-        this.productRepository = productRepository;
-        this.productRecommendationService = productRecommendationService;
-        this.naturalLanguageQueryService = naturalLanguageQueryService;
-    }
+    this.productService = productService;
+    this.productRepository = productRepository;
+    this.productRecommendationService = productRecommendationService;
+    this.naturalLanguageQueryService = naturalLanguageQueryService;
+    this.comparisonInsightService = comparisonInsightService;
+}
 
     // ============================================================
     // 1. GET ALL PRODUCTS
@@ -170,6 +175,29 @@ public class ProductController {
 
         return ResponseEntity.ok(products);
     }
+    // GET /api/products/compare/insight/1/2
+@GetMapping("/compare/insight/{product1Id}/{product2Id}")
+public ResponseEntity<?> compareProductInsights(
+        @PathVariable Long product1Id,
+        @PathVariable Long product2Id) {
+
+    if (product1Id.equals(product2Id)) {
+        return ResponseEntity.badRequest()
+                .body("Choose two different products to compare.");
+    }
+
+    try {
+        ComparisonInsight insight =
+                comparisonInsightService.generateInsight(
+                        product1Id, product2Id);
+
+        return ResponseEntity.ok(insight);
+
+    } catch (IllegalArgumentException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(exception.getMessage());
+    }
+}
 
     // ============================================================
     // 7. CREATE PRODUCT
