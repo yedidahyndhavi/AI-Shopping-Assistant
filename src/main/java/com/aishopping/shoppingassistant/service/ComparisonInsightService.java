@@ -1,3 +1,4 @@
+
 package com.aishopping.shoppingassistant.service;
 
 import com.aishopping.shoppingassistant.model.ComparisonInsight;
@@ -31,6 +32,16 @@ public class ComparisonInsightService {
             Long product1Id,
             Long product2Id) {
 
+        if (product1Id == null || product2Id == null) {
+            throw new IllegalArgumentException(
+                    "Both product IDs are required.");
+        }
+
+        if (product1Id.equals(product2Id)) {
+            throw new IllegalArgumentException(
+                    "Choose two different products to compare.");
+        }
+
         Product p1 = findProduct(product1Id);
         Product p2 = findProduct(product2Id);
 
@@ -50,7 +61,7 @@ public class ComparisonInsightService {
                     + formatNumber(p1.getPrice() - p2.getPrice())
                     + " less");
         } else {
-            tradeOffs.add("Both products have the same price");
+            tradeOffs.add("Both products have the same price.");
         }
 
         // Compare customer ratings
@@ -59,29 +70,44 @@ public class ComparisonInsightService {
         } else if (p2.getRating() > p1.getRating()) {
             strengths2.add("Higher customer rating");
         } else {
-            tradeOffs.add("Both products have the same rating");
+            tradeOffs.add("Both products have the same rating.");
         }
 
         // Compare common numeric specifications
         String[] specifications = {
-                "RAM", "Storage", "Main Camera", "Battery",
-                "Display Size", "Refresh Rate", "Weight"
+                "RAM",
+                "Storage",
+                "Main Camera",
+                "Battery",
+                "Display Size",
+                "Refresh Rate",
+                "Weight"
         };
 
         for (String name : specifications) {
             compareNumericSpecification(
-                    p1, p2, name, strengths1, strengths2, tradeOffs);
+                    p1, p2, name,
+                    strengths1, strengths2, tradeOffs);
         }
 
-        // Compare category-specific laptop specifications
+        // Compare processor and GPU for laptops
         if ("Laptop".equalsIgnoreCase(p1.getCategory())
                 && "Laptop".equalsIgnoreCase(p2.getCategory())) {
+
             compareTextSpecification(
-                    p1, p2, "Processor", strengths1, strengths2, tradeOffs);
+                    p1, p2, "Processor",
+                    strengths1, strengths2, tradeOffs);
+
             compareTextSpecification(
-                    p1, p2, "GPU", strengths1, strengths2, tradeOffs);
+                    p1, p2, "GPU",
+                    strengths1, strengths2, tradeOffs);
+
+            compareTextSpecification(
+                    p1, p2, "Operating System",
+                    strengths1, strengths2, tradeOffs);
         }
 
+        // Calculate overall scores using the existing evaluation service
         double score1 = evaluationService.calculateScore(p1);
         double score2 = evaluationService.calculateScore(p2);
 
@@ -98,7 +124,8 @@ public class ComparisonInsightService {
                     + " has the higher overall score based on the current scoring engine.";
         } else {
             winner = "Tie";
-            summary = "Both products have the same overall score. Choose based on your priorities.";
+            summary = "Both products have the same overall score. "
+                    + "Choose based on your priorities.";
         }
 
         return new ComparisonInsight(
@@ -114,18 +141,23 @@ public class ComparisonInsightService {
     private Product findProduct(Long id) {
         return productService.getAllProducts()
                 .stream()
-                .filter(p -> p.getId().equals(id))
+                .filter(p -> p.getId() != null && p.getId().equals(id))
                 .findFirst()
                 .orElseThrow(() ->
-                        new IllegalArgumentException("Product not found: " + id));
+                        new IllegalArgumentException(
+                                "Product not found: " + id));
     }
 
     private ProductSpecification findSpecification(
-            Long productId, String name) {
+            Long productId,
+            String name) {
+
         return specificationRepository.findByProductId(productId)
                 .stream()
                 .filter(s -> s.getSpecificationName() != null
-                        && s.getSpecificationName().equalsIgnoreCase(name))
+                        && s.getSpecificationName()
+                                .trim()
+                                .equalsIgnoreCase(name))
                 .findFirst()
                 .orElse(null);
     }
@@ -138,12 +170,31 @@ public class ComparisonInsightService {
             List<String> strengths2,
             List<String> tradeOffs) {
 
-        ProductSpecification s1 = findSpecification(p1.getId(), name);
-        ProductSpecification s2 = findSpecification(p2.getId(), name);
+        ProductSpecification s1 =
+                findSpecification(p1.getId(), name);
 
+        ProductSpecification s2 =
+                findSpecification(p2.getId(), name);
+
+        // Report missing or non-numeric values
         if (s1 == null || s2 == null
                 || s1.getNumericValue() == null
                 || s2.getNumericValue() == null) {
+
+            String value1 = (s1 == null
+                    || s1.getNumericValue() == null)
+                    ? "Not available"
+                    : displayValue(s1);
+
+            String value2 = (s2 == null
+                    || s2.getNumericValue() == null)
+                    ? "Not available"
+                    : displayValue(s2);
+
+            tradeOffs.add(name + ": "
+                    + p1.getName() + " = " + value1
+                    + ", " + p2.getName() + " = " + value2);
+
             return;
         }
 
@@ -151,15 +202,21 @@ public class ComparisonInsightService {
         double v2 = s2.getNumericValue();
 
         if (Double.compare(v1, v2) == 0) {
+            tradeOffs.add(name + ": Both products have "
+                    + displayValue(s1));
             return;
         }
 
+        // Lower weight is preferable; higher values for other
+        // numeric specifications are treated as preferable.
         boolean lowerIsBetter = "Weight".equalsIgnoreCase(name);
 
         if ((lowerIsBetter && v1 < v2)
                 || (!lowerIsBetter && v1 > v2)) {
+
             strengths1.add(
                     (lowerIsBetter ? "Lower " : "Higher ") + name);
+
         } else {
             strengths2.add(
                     (lowerIsBetter ? "Lower " : "Higher ") + name);
@@ -178,20 +235,42 @@ public class ComparisonInsightService {
             List<String> strengths2,
             List<String> tradeOffs) {
 
-        ProductSpecification s1 = findSpecification(p1.getId(), name);
-        ProductSpecification s2 = findSpecification(p2.getId(), name);
+        ProductSpecification s1 =
+                findSpecification(p1.getId(), name);
+
+        ProductSpecification s2 =
+                findSpecification(p2.getId(), name);
 
         if (s1 == null || s2 == null
                 || s1.getSpecificationValue() == null
                 || s2.getSpecificationValue() == null) {
+
+            String value1 = (s1 == null
+                    || s1.getSpecificationValue() == null)
+                    ? "Not available"
+                    : displayValue(s1);
+
+            String value2 = (s2 == null
+                    || s2.getSpecificationValue() == null)
+                    ? "Not available"
+                    : displayValue(s2);
+
+            tradeOffs.add(name + ": "
+                    + p1.getName() + " = " + value1
+                    + ", " + p2.getName() + " = " + value2);
+
             return;
         }
 
-        if (!s1.getSpecificationValue().equalsIgnoreCase(
-                s2.getSpecificationValue())) {
+        String value1 = s1.getSpecificationValue().trim();
+        String value2 = s2.getSpecificationValue().trim();
+
+        if (!value1.equalsIgnoreCase(value2)) {
             tradeOffs.add(name + ": "
-                    + p1.getName() + " = " + s1.getSpecificationValue()
-                    + ", " + p2.getName() + " = " + s2.getSpecificationValue());
+                    + p1.getName() + " = " + value1
+                    + ", " + p2.getName() + " = " + value2);
+        } else {
+            tradeOffs.add(name + ": Both products have " + value1);
         }
     }
 
@@ -199,13 +278,17 @@ public class ComparisonInsightService {
         String value = specification.getSpecificationValue();
         String unit = specification.getUnit();
 
-        if (value == null) {
-            return "";
+        if (value == null || value.isBlank()) {
+            value = specification.getNumericValue() == null
+                    ? "Not available"
+                    : String.valueOf(specification.getNumericValue());
         }
+
         if (unit == null || unit.isBlank()
                 || value.toLowerCase().contains(unit.toLowerCase())) {
             return value;
         }
+
         return value + " " + unit;
     }
 
