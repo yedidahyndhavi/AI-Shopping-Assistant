@@ -698,6 +698,13 @@ function App() {
 
     }
   };
+  // AI COMPARISON INSIGHTS STATE
+
+const [comparisonInsight, setComparisonInsight] =
+  useState(null);
+
+const [comparisonInsightError, setComparisonInsightError] =
+  useState("");
 
 
   // ============================================================

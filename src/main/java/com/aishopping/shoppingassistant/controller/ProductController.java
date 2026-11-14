@@ -1,28 +1,30 @@
+
 package com.aishopping.shoppingassistant.controller;
 
 import com.aishopping.shoppingassistant.model.Product;
+import com.aishopping.shoppingassistant.model.ProductComparisonResponse;
 import com.aishopping.shoppingassistant.model.ProductRequirement;
+import com.aishopping.shoppingassistant.model.ComparisonInsight;
 import com.aishopping.shoppingassistant.model.RecommendationListResponse;
 import com.aishopping.shoppingassistant.model.RecommendationRequest;
 import com.aishopping.shoppingassistant.model.RecommendationResponse;
 
 import com.aishopping.shoppingassistant.repository.ProductRepository;
+
 import com.aishopping.shoppingassistant.service.NaturalLanguageQueryService;
 import com.aishopping.shoppingassistant.service.ProductRecommendationService;
 import com.aishopping.shoppingassistant.service.ProductService;
+import com.aishopping.shoppingassistant.service.ComparisonInsightService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.LinkedHashMap;
 import java.util.stream.Collectors;
-import com.aishopping.shoppingassistant.model.ComparisonInsight;
-import com.aishopping.shoppingassistant.service.ComparisonInsightService;
 
 @RestController
 @RequestMapping("/api/products")
@@ -36,18 +38,18 @@ public class ProductController {
     private final ComparisonInsightService comparisonInsightService;
 
     public ProductController(
-        ProductService productService,
-        ProductRepository productRepository,
-        ProductRecommendationService productRecommendationService,
-        NaturalLanguageQueryService naturalLanguageQueryService,
-        ComparisonInsightService comparisonInsightService) {
+            ProductService productService,
+            ProductRepository productRepository,
+            ProductRecommendationService productRecommendationService,
+            NaturalLanguageQueryService naturalLanguageQueryService,
+            ComparisonInsightService comparisonInsightService) {
 
-    this.productService = productService;
-    this.productRepository = productRepository;
-    this.productRecommendationService = productRecommendationService;
-    this.naturalLanguageQueryService = naturalLanguageQueryService;
-    this.comparisonInsightService = comparisonInsightService;
-}
+        this.productService = productService;
+        this.productRepository = productRepository;
+        this.productRecommendationService = productRecommendationService;
+        this.naturalLanguageQueryService = naturalLanguageQueryService;
+        this.comparisonInsightService = comparisonInsightService;
+    }
 
     // ============================================================
     // 1. GET ALL PRODUCTS
@@ -56,6 +58,7 @@ public class ProductController {
 
     @GetMapping
     public ResponseEntity<List<Product>> getAllProducts() {
+
         return ResponseEntity.ok(productService.getAllProducts());
     }
 
@@ -175,32 +178,49 @@ public class ProductController {
 
         return ResponseEntity.ok(products);
     }
-    // GET /api/products/compare/insight/1/2
-@GetMapping("/compare/insight/{product1Id}/{product2Id}")
-public ResponseEntity<?> compareProductInsights(
-        @PathVariable Long product1Id,
-        @PathVariable Long product2Id) {
-
-    if (product1Id.equals(product2Id)) {
-        return ResponseEntity.badRequest()
-                .body("Choose two different products to compare.");
-    }
-
-    try {
-        ComparisonInsight insight =
-                comparisonInsightService.generateInsight(
-                        product1Id, product2Id);
-
-        return ResponseEntity.ok(insight);
-
-    } catch (IllegalArgumentException exception) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(exception.getMessage());
-    }
-}
 
     // ============================================================
-    // 7. CREATE PRODUCT
+    // 7. DETAILED PRODUCT COMPARISON
+    // GET /api/products/compare/detailed?ids=1,2
+    // ============================================================
+
+    @GetMapping("/compare/detailed")
+    public ProductComparisonResponse compareProductsDetailed(
+            @RequestParam List<Long> ids) {
+
+        return productService.compareProductsDetailed(ids);
+    }
+
+    // ============================================================
+    // 8. AI PRODUCT COMPARISON INSIGHTS
+    // GET /api/products/compare/insight/1/2
+    // ============================================================
+
+    @GetMapping("/compare/insight/{product1Id}/{product2Id}")
+    public ResponseEntity<?> compareProductInsights(
+            @PathVariable Long product1Id,
+            @PathVariable Long product2Id) {
+
+        if (product1Id.equals(product2Id)) {
+            return ResponseEntity.badRequest()
+                    .body("Choose two different products to compare.");
+        }
+
+        try {
+            ComparisonInsight insight =
+                    comparisonInsightService.generateInsight(
+                            product1Id, product2Id);
+
+            return ResponseEntity.ok(insight);
+
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(exception.getMessage());
+        }
+    }
+
+    // ============================================================
+    // 9. CREATE PRODUCT
     // POST /api/products
     // ============================================================
 
@@ -249,7 +269,7 @@ public ResponseEntity<?> compareProductInsights(
     }
 
     // ============================================================
-    // 8. COMPARE TWO PRODUCTS
+    // 10. NORMAL PRODUCT COMPARISON
     // GET /api/products/compare?ids=1,2
     // ============================================================
 
@@ -327,7 +347,7 @@ public ResponseEntity<?> compareProductInsights(
     }
 
     // ============================================================
-    // 9. RECOMMEND BEST PRODUCT FROM STRUCTURED REQUIREMENTS
+    // 11. RECOMMEND BEST PRODUCT FROM STRUCTURED REQUIREMENTS
     // POST /api/products/recommend
     // ============================================================
 
@@ -352,7 +372,7 @@ public ResponseEntity<?> compareProductInsights(
     }
 
     // ============================================================
-    // 10. TOP-N RECOMMENDATIONS FROM STRUCTURED REQUIREMENTS
+    // 12. TOP-N RECOMMENDATIONS FROM STRUCTURED REQUIREMENTS
     // POST /api/products/recommend/top
     // ============================================================
 
@@ -382,7 +402,7 @@ public ResponseEntity<?> compareProductInsights(
     }
 
     // ============================================================
-    // 11. NATURAL-LANGUAGE PRODUCT RECOMMENDATION
+    // 13. NATURAL-LANGUAGE PRODUCT RECOMMENDATION
     // POST /api/products/recommend/query
     // ============================================================
 
@@ -421,7 +441,7 @@ public ResponseEntity<?> compareProductInsights(
     }
 
     // ============================================================
-    // 12. TOP-N NATURAL-LANGUAGE RECOMMENDATIONS
+    // 14. TOP-N NATURAL-LANGUAGE RECOMMENDATIONS
     // POST /api/products/recommend/query/top?limit=3
     // ============================================================
 
