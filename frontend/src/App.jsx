@@ -175,6 +175,8 @@ function App() {
   // ============================================================
 
   const searchProducts = async () => {
+    console.log("SEARCH BUTTON CLICKED");
+console.log("Search term:", searchTerm);
 
     if (!searchTerm.trim()) {
 
@@ -191,11 +193,14 @@ function App() {
 
     try {
 
-      const response = await fetch(
-        `http://localhost:8080/api/products/search?name=${encodeURIComponent(
-          searchTerm
-        )}`
-      );
+      const apiUrl = `http://localhost:8080/api/products/search?name=${encodeURIComponent(searchTerm)}`;
+
+console.log("Calling API:", apiUrl);
+
+const response = await fetch(apiUrl);
+console.log("API RESPONSE STATUS:", response.status);
+
+console.log("API status:", response.status);
 
       const message =
         await response.text();
@@ -211,8 +216,11 @@ function App() {
 
       const data =
         JSON.parse(message);
+        console.log("TOTAL PRODUCTS RECEIVED:", data.length);
+console.log("PRODUCT NAMES:", data.map(product => product.name));
 
       setProducts(data);
+      console.log("Products received:", data.length, data);
 
       if (data.length === 0) {
 

@@ -83,27 +83,34 @@ public class ProductController {
     // GET /api/products/search?name=Samsung
     // ============================================================
 
-    @GetMapping("/search")
-    public ResponseEntity<?> searchProducts(
-            @RequestParam String name) {
+   
+@GetMapping("/search")
+public ResponseEntity<?> searchProducts(
+        @RequestParam String name) {
 
-        if (name == null || name.isBlank()) {
-            return ResponseEntity.badRequest()
-                    .body("Product search name cannot be empty.");
-        }
-
-        String searchTerm = name.trim().toLowerCase();
-
-        List<Product> products = productService.getAllProducts()
-                .stream()
-                .filter(product -> product.getName() != null)
-                .filter(product -> product.getName()
-                        .toLowerCase()
-                        .contains(searchTerm))
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(products);
+    if (name == null || name.isBlank()) {
+        return ResponseEntity.badRequest()
+                .body("Product search name cannot be empty.");
     }
+
+    String searchTerm = name.trim().toLowerCase();
+
+    List<Product> products = productService.getAllProducts()
+            .stream()
+            .filter(product ->
+                    (product.getName() != null &&
+                     product.getName().toLowerCase().contains(searchTerm))
+                    ||
+                    (product.getBrand() != null &&
+                     product.getBrand().toLowerCase().contains(searchTerm))
+                    ||
+                    (product.getCategory() != null &&
+                     product.getCategory().toLowerCase().contains(searchTerm))
+            )
+            .collect(Collectors.toList());
+
+    return ResponseEntity.ok(products);
+}
 
     // ============================================================
     // 4. FILTER PRODUCTS BY CATEGORY
