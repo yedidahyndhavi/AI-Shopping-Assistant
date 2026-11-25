@@ -1689,6 +1689,45 @@ const [comparisonInsightError, setComparisonInsightError] =
 
           </table>
 
+           
+{/* DAY 52 - TECHNICAL SPECIFICATION COMPARISON */}
+
+<div className="specification-comparison">
+
+  <h3>Technical Specification Comparison</h3>
+
+  {comparison.specificationComparisons &&
+    comparison.specificationComparisons.length > 0 ? (
+
+    <table className="comparison-table">
+
+      <thead>
+        <tr>
+          <th>Specification</th>
+          <th>{comparison.product1.name}</th>
+          <th>{comparison.product2.name}</th>
+          <th>Winner</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {comparison.specificationComparisons.map((item, index) => (
+          <tr key={index}>
+            <td>{item.specification}</td>
+            <td>{item.product1Value}</td>
+            <td>{item.product2Value}</td>
+            <td>{item.winner}</td>
+          </tr>
+        ))}
+      </tbody>
+
+    </table>
+
+  ) : (
+    <p>No technical specifications available.</p>
+  )}
+
+</div>
 
           <div className="comparison-details">
 
